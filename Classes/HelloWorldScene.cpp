@@ -1,7 +1,10 @@
 #include "HelloWorldScene.h"
 #include "SimpleAudioEngine.h"
-
+#include "ui/CocosGUI.h"
+#include "cocos2d.h"
 USING_NS_CC;
+
+using namespace cocos2d::ui;
 
 Scene* HelloWorld::createScene()
 {
@@ -62,7 +65,7 @@ bool HelloWorld::init()
     // add a label shows "Hello World"
     // create and initialize a label
 
-    auto label = Label::createWithTTF("Hello World", "fonts/Marker Felt.ttf", 24);
+  /*  auto label = Label::createWithTTF("Hello World", "fonts/Marker Felt.ttf", 24);
     if (label == nullptr)
     {
         problemLoading("'fonts/Marker Felt.ttf'");
@@ -75,10 +78,10 @@ bool HelloWorld::init()
 
         // add the label as a child to this layer
         this->addChild(label, 1);
-    }
+    }*/
 
     // add "HelloWorld" splash screen"
-    auto sprite = Sprite::create("HelloWorld.png");
+    auto sprite = Sprite::create("MainMenuScene/main_interface.png");
     if (sprite == nullptr)
     {
         problemLoading("'HelloWorld.png'");
@@ -89,8 +92,27 @@ bool HelloWorld::init()
         sprite->setPosition(Vec2(visibleSize.width/2 + origin.x, visibleSize.height/2 + origin.y));
 
         // add the sprite as a child to this layer
-        this->addChild(sprite, 0);
+        this->addChild(sprite, 0);//背景层级为0，确保它在最底层
     }
+
+   
+    auto AdeventureModebutton = ui::Button::create("MainMenuScene/AdeventureMode.png", "MainMenuScene/AdventureModeAfterpress.png");
+    AdeventureModebutton->setPosition(Vec2(visibleSize.width / 2 + origin.x, visibleSize.height / 2 + origin.y - 100));
+    AdeventureModebutton->addClickEventListener([=](Ref* sender) {
+        CCLOG("Button clicked!");
+        });
+    this->addChild(AdeventureModebutton, 1);
+
+    auto BossModebutton = ui::Button::create("MainMenuScene/BoseMode.png", "MainMenuScene/BoseModeModeAfterpress.png");
+    BossModebutton->setPosition(Vec2(visibleSize.width / 2 + origin.x, visibleSize.height / 2 + origin.y - 100));
+    BossModebutton->addClickEventListener([=](Ref* sender) {
+        CCLOG("Button clicked!");
+        });
+    this->addChild(BossModebutton, 1);
+
+
+
+
     return true;
 }
 
