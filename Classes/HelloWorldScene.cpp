@@ -1,5 +1,6 @@
 #include "HelloWorldScene.h"
 #include "SimpleAudioEngine.h"
+#include "LevelSelectionScene.h" 
 #include "ui/CocosGUI.h"
 #include "cocos2d.h"
 USING_NS_CC;
@@ -81,10 +82,10 @@ bool HelloWorld::init()
     }*/
 
     // add "HelloWorld" splash screen"
-    auto sprite = Sprite::create("MainMenuScene/main_interface.png");
+    auto sprite = Sprite::create("MainMenuScene/menu.png");
     if (sprite == nullptr)
     {
-        problemLoading("'HelloWorld.png'");
+        problemLoading("'menu.png'");
     }
     else
     {
@@ -97,14 +98,19 @@ bool HelloWorld::init()
 
    
     auto AdeventureModebutton = ui::Button::create("MainMenuScene/AdeventureMode.png", "MainMenuScene/AdventureModeAfterpress.png");
-    AdeventureModebutton->setPosition(Vec2(visibleSize.width / 2 + origin.x, visibleSize.height / 2 + origin.y - 100));
+    AdeventureModebutton->setPosition(Vec2(384, visibleSize.height / 2 + origin.y - 300));
+    AdeventureModebutton->setScale(2);
     AdeventureModebutton->addClickEventListener([=](Ref* sender) {
         CCLOG("Button clicked!");
+        // 点击按钮后切换到 LevelSelectionScene
+        Director::getInstance()->replaceScene(LevelSelectionScene::create());
         });
     this->addChild(AdeventureModebutton, 1);
 
-    auto BossModebutton = ui::Button::create("MainMenuScene/BoseMode.png", "MainMenuScene/BoseModeModeAfterpress.png");
-    BossModebutton->setPosition(Vec2(visibleSize.width / 2 + origin.x, visibleSize.height / 2 + origin.y - 100));
+
+    auto BossModebutton = ui::Button::create("MainMenuScene/BossMode.png", "MainMenuScene/BossModeAfterpress.png");
+    BossModebutton->setPosition(Vec2(1080, visibleSize.height / 2 + origin.y - 300));
+    BossModebutton->setScale(2);
     BossModebutton->addClickEventListener([=](Ref* sender) {
         CCLOG("Button clicked!");
         });
