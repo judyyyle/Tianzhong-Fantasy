@@ -4,15 +4,25 @@
 #include<vector>
 USING_NS_CC;
 
-//坐标
-struct pos {
-	int i;
-	int j;
+//世界坐标与数组的转换
+struct array {
+    int row;
+    int col;
 };
-struct vec2 {
-	float x;
-	float y;
-};
+
+Vec2 array_to_vec2(int row, int col) { //返回Vec2类型，即世界坐标
+    Vec2 vec;
+    vec.x = 64 + 128 * col;
+    vec.y = 1024 - 64 - 128 * row;
+    return vec;
+}
+
+array vec2_to_array(Vec2 vec) { //返回array类型，即数组
+    array arr;
+    arr.row = 12 - static_cast<int>((vec.y / 128));
+    arr.col = static_cast<int>((vec.x / 128));
+    return arr;
+}
 
 //怪物的出现和消失
 class MonsterStart : public cocos2d::Layer {
@@ -27,7 +37,8 @@ private:
 public:
     virtual bool init();
     void start();
-    void MonsterAppear(int Type);
+    void MonsterAppear(int Type)；
+    void CarrotAppear();
 
     static cocos2d::Layer* createLayer();
 
