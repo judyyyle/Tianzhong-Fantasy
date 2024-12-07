@@ -121,6 +121,13 @@ bool HelloWorld::init()
     hp_number->setContentSize(Size(20, 36));
     hp_number->setPosition(1467, 760);
     this->addChild(hp_number, 0);
+    
+    auto monster1= Sprite::create("monster1_1.png");
+    auto moveTo = MoveTo::create(2, array_to_vec2(5, 1));
+    monster1->setContentSize(Size(128, 128));
+    monster1->setPosition(array_to_vec2(2, 1).x, array_to_vec2(2, 1).y);
+    this->addChild(monster1, 0);
+    monster1->runAction(moveTo);
 
     return true;
 }
