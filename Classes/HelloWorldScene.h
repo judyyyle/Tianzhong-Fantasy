@@ -28,6 +28,12 @@
 #include "cocos2d.h"
 #include "LevelSelectionScene.h" 
 
+//宏定义
+#define PATH -1
+#define SPACE 0
+#define BARRIER 1
+#define EXISTED_TOWER 2
+
 //世界坐标与数组的转换
 struct array {
     int row;
