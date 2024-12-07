@@ -27,6 +27,27 @@
 
 #include "cocos2d.h"
 #include "LevelSelectionScene.h" 
+
+//世界坐标与数组的转换
+struct array {
+    int row;
+    int col;
+};
+
+Vec2 array_to_vec2(int row,int col) {
+    Vec2 vec;
+    vec.x = 64 + 128 * col;
+    vec.y = 1024 - 64 - 128 * row;
+    return vec;
+}
+
+array vec2_to_array(Vec2 vec) {
+    array arr;
+    arr.row = 12 - static_cast<int>((vec.y / 128));
+    arr.col = static_cast<int>((vec.x / 128));
+    return arr;
+}
+
 class HelloWorld : public cocos2d::Scene
 {
 public:
