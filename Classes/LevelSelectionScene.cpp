@@ -2,7 +2,7 @@
 #include "SimpleAudioEngine.h"
 #include "LevelSelectionScene.h"
 #include "ui/CocosGUI.h"
-
+#include "GamePlayScene.h"
 
 USING_NS_CC;
 
@@ -39,11 +39,11 @@ bool LevelSelectionScene::init()
         return false;
     }
 
-    // »ñÈ¡ÆÁÄ»´óÐ¡
+    // èŽ·å–å±å¹•å¤§å°
     auto visibleSize = Director::getInstance()->getVisibleSize();
     Vec2 origin = Director::getInstance()->getVisibleOrigin();
 
-    // Ìí¼Ó¼òµ¥µÄ±êÇ©£¬±íÊ¾ÕâÊÇ¹Ø¿¨Ñ¡Ôñ³¡¾°
+    // æ·»åŠ ç®€å•çš„æ ‡ç­¾ï¼Œè¡¨ç¤ºè¿™æ˜¯å…³å¡é€‰æ‹©åœºæ™¯
     auto label = Label::createWithTTF("Level Selection", "fonts/Marker Felt.ttf", 24);
     label->setPosition(Vec2(visibleSize.width / 2 + origin.x, 900 + origin.y));
     this->addChild(label, 1);
@@ -60,11 +60,11 @@ bool LevelSelectionScene::init()
         sprite->setPosition(Vec2(visibleSize.width / 2 + origin.x, visibleSize.height / 2 + origin.y));
 
 
-        sprite->setContentSize(Size(1536, 1024)); // ÉèÖÃÎª1536x1024µÄ´óÐ¡
+        sprite->setContentSize(Size(1536, 1024)); // è®¾ç½®ä¸º1536x1024çš„å¤§å°
 
 
         // add the sprite as a child to this layer
-        this->addChild(sprite, 0);//±³¾°²ã¼¶Îª0£¬È·±£ËüÔÚ×îµ×²ã
+        this->addChild(sprite, 0);//èƒŒæ™¯å±‚çº§ä¸º0ï¼Œç¡®ä¿å®ƒåœ¨æœ€åº•å±‚
     }
 
 
@@ -74,7 +74,7 @@ bool LevelSelectionScene::init()
     Homebutton->setPosition(Vec2(1500, 1000));
    Homebutton->addClickEventListener([=](Ref* sender) {
         CCLOG("Button clicked!");
-        // µã»÷°´Å¥ºóÇÐ»»µ½ LevelSelectionScene
+        // ç‚¹å‡»æŒ‰é’®åŽåˆ‡æ¢åˆ° LevelSelectionScene
         Director::getInstance()->replaceScene(HelloWorld::create());
         });
     this->addChild(Homebutton, 1);
@@ -90,11 +90,11 @@ bool LevelSelectionScene::init()
         spritemap1->setPosition(Vec2(384+ origin.x,500 + origin.y));
      
 
-        spritemap1->setContentSize(Size(576, 384)); // ÉèÖÃÎª1536x1024µÄ´óÐ¡
+        spritemap1->setContentSize(Size(576, 384)); // è®¾ç½®ä¸º1536x1024çš„å¤§å°
 
 
         // add the sprite as a child to this layer
-        this->addChild(spritemap1, 1);//±³¾°²ã¼¶Îª0£¬È·±£ËüÔÚ×îµ×²ã
+        this->addChild(spritemap1, 1);//èƒŒæ™¯å±‚çº§ä¸º0ï¼Œç¡®ä¿å®ƒåœ¨æœ€åº•å±‚
     }
 
     auto spritemap2 = Sprite::create("LevelSelectionScene/map2_locked.png");
@@ -108,11 +108,11 @@ bool LevelSelectionScene::init()
         spritemap2->setPosition(Vec2(1100 + origin.x, 500+ origin.y));
 
 
-        spritemap2->setContentSize(Size(576, 384)); // ÉèÖÃÎª1536x1024µÄ´óÐ¡
+        spritemap2->setContentSize(Size(576, 384)); // è®¾ç½®ä¸º1536x1024çš„å¤§å°
 
 
          // add the sprite as a child to this layer
-        this->addChild(spritemap2, 1);//±³¾°²ã¼¶Îª0£¬È·±£ËüÔÚ×îµ×²ã
+        this->addChild(spritemap2, 1);//èƒŒæ™¯å±‚çº§ä¸º0ï¼Œç¡®ä¿å®ƒåœ¨æœ€åº•å±‚
     }
     auto spritelock = Sprite::create("LevelSelectionScene/lock.png");
     if (spritelock== nullptr)
@@ -124,7 +124,7 @@ bool LevelSelectionScene::init()
         // position the sprite on the center of the screen
         spritelock->setPosition(Vec2(1100 + origin.x,150 + origin.y));
         // add the sprite as a child to this layer
-        this->addChild(spritelock, 1);//±³¾°²ã¼¶Îª0£¬È·±£ËüÔÚ×îµ×²ã
+        this->addChild(spritelock, 1);//èƒŒæ™¯å±‚çº§ä¸º0ï¼Œç¡®ä¿å®ƒåœ¨æœ€åº•å±‚
     }
 
 
@@ -132,8 +132,9 @@ bool LevelSelectionScene::init()
     startbutton1->setPosition(Vec2(384, 150));
     startbutton1->addClickEventListener([=](Ref* sender) {
         CCLOG("Button clicked!");
-        // µã»÷°´Å¥ºóÇÐ»»µ½ LevelSelectionScene
-        //Director::getInstance()->replaceScene(Map1::create());
+        // ç‚¹å‡»æŒ‰é’®åŽåˆ‡æ¢åˆ° LevelSelectionScene
+        MAP_SCENE* Map1 = MAP_SCENE::create();
+        Director::getInstance()->replaceScene(Map1);
         });
     this->addChild(startbutton1, 1);
  
