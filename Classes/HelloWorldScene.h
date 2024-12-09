@@ -47,7 +47,7 @@ static Vec2 array_to_vec2(int row,int col) { //返回Vec2类型，即世界坐�
     return vec;
 }
 
-array vec2_to_array(Vec2 vec) { //返回array类型，即数组
+static array vec2_to_array(Vec2 vec) { //返回array类型，即数组
     array arr;
     arr.row = 8 - 0.5 - static_cast<int>((vec.y / 128));
     arr.col = static_cast<int>((vec.x / 128));
