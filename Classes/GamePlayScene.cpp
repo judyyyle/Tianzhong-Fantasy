@@ -3,46 +3,47 @@
 #include "SimpleAudioEngine.h"
 #include "LevelSelectionScene.h"
 #include "ui/CocosGUI.h"
-#include <memory>  // ÒıÈëÖÇÄÜÖ¸Õë
+#include <memory>  // å¼•å…¥æ™ºèƒ½æŒ‡é’ˆ
 #include "cocos2d.h"
 USING_NS_CC;
 
 using namespace cocos2d::ui;
 
 
-//ÊÀ½ç×ø±êÓëÊı×éµÄ×ª»»
+//ä¸–ç•Œåæ ‡ä¸æ•°ç»„çš„è½¬æ¢
 struct array {
     int row;
     int col;
 };
 
-Vec2 array_to_vec2(int row, int col) { //·µ»ØVec2ÀàĞÍ£¬¼´ÊÀ½ç×ø±ê
+Vec2 array_to_vec2(int row, int col) { //è¿”å›Vec2ç±»å‹ï¼Œå³ä¸–ç•Œåæ ‡
     Vec2 vec;
     vec.x = 64 + 128 * col;
     vec.y = 1024 - 64 - 128 * row;
     return vec;
 }
 
-array vec2_to_array(Vec2 vec) { //·µ»ØarrayÀàĞÍ£¬¼´Êı×é
+array vec2_to_array(Vec2 vec) { //è¿”å›arrayç±»å‹ï¼Œå³æ•°ç»„
     array arr;
     arr.row = 12 - static_cast<int>((vec.y / 128));
     arr.col = static_cast<int>((vec.x / 128));
     return arr;
 }
 
-
-
+/**********************  å…¨å±€å˜é‡  ***********************/
+int coinNumber = 1234;//è®°å½•å½“å‰é‡‘å¸çš„æ•°é‡
+/*********************************************************/
 
 MAP_SCENE::MAP_SCENE()
     : background(nullptr)
 {
-    // ³õÊ¼»¯µØÍ¼×´Ì¬Êı×é
-    memset(map, SPACE, sizeof(map)); // Ä¬ÈÏËùÓĞÎ»ÖÃÎª¿Õ°×
+    // åˆå§‹åŒ–åœ°å›¾çŠ¶æ€æ•°ç»„
+    memset(map, SPACE, sizeof(map)); // é»˜è®¤æ‰€æœ‰ä½ç½®ä¸ºç©ºç™½
 }
 
 MAP_SCENE::~MAP_SCENE()
 {
-    // ×ÊÔ´ÇåÀí£¨Èç¹ûÓĞµÄ»°£©
+    // èµ„æºæ¸…ç†ï¼ˆå¦‚æœæœ‰çš„è¯ï¼‰
 }
 
 MAP_SCENE* MAP_SCENE::create()
@@ -67,15 +68,15 @@ bool MAP_SCENE::init()
         return false;
     }
 
-    // »ù±¾³õÊ¼»¯£¬±ÈÈçÌí¼Ó±³¾°
+    // åŸºæœ¬åˆå§‹åŒ–ï¼Œæ¯”å¦‚æ·»åŠ èƒŒæ™¯
  
-    // »ñÈ¡ÆÁÄ»´óĞ¡
+    // è·å–å±å¹•å¤§å°
     auto visibleSize = Director::getInstance()->getVisibleSize();
     Vec2 origin = Director::getInstance()->getVisibleOrigin();
 
   
 
-    background = cocos2d::Sprite::create("GamePlayScene/map1.png");//ÏÈĞ´ËÀµÚÒ»ÕÅµØÍ¼ £¬ÈçºÎÑ¡ÔñµÚ¼¸ÕÅµØÍ¼´ıĞŞ¸Ä
+    background = cocos2d::Sprite::create("GamePlayScene/map1.png");//å…ˆå†™æ­»ç¬¬ä¸€å¼ åœ°å›¾ ï¼Œå¦‚ä½•é€‰æ‹©ç¬¬å‡ å¼ åœ°å›¾å¾…ä¿®æ”¹
     if (background == nullptr)
     {
         // problemLoading("'menu.png'");
@@ -86,26 +87,44 @@ bool MAP_SCENE::init()
         background ->setPosition(Vec2(visibleSize.width / 2 + origin.x, visibleSize.height / 2 + origin.y));
 
 
-        background->setContentSize(Size(1536, 1024)); // ÉèÖÃÎª1536x1024µÄ´óĞ¡
+        background->setContentSize(Size(1536, 1024)); // è®¾ç½®ä¸º1536x1024çš„å¤§å°
 
 
         // add the sprite as a child to this layer
-        this->addChild(background, 0);//±³¾°²ã¼¶Îª0£¬È·±£ËüÔÚ×îµ×²ã
+        this->addChild(background, 0);//èƒŒæ™¯å±‚çº§ä¸º0ï¼Œç¡®ä¿å®ƒåœ¨æœ€åº•å±‚
     }
 
-    // ³õÊ¼»¯µØÍ¼
+    //èœå•æ èƒŒæ™¯
+    auto menu_image = Sprite::create("/GamePlayScene/background.png");
+    menu_image->setPosition(Vec2(origin.x + visibleSize.width / 2,
+    origin.y + visibleSize.height - menu_image->getContentSize().height / 2));
+    menu_image->setOpacity(230);
+    this->addChild(menu_image);
+    //é‡‘å¸å½¢è±¡
+    auto coin = Sprite::create();
+    coin->setName("Coin");
+    this->addChild(coin, 1);
+    //é‡‘å¸æ•°å€¼
+    auto coin_number = Label::createWithTTF(std::to_string(coinNumber), "/fonts/TMON Monsori.ttf", 40);
+    coin_number->setTextColor(Color4B::WHITE);
+    coin_number->setName("CoinNumber");
+    coin_number->setPosition(282, 980);
+    this->addChild(coin_number);
+    coin_number->setString(std::to_string(coinNumber));// æ›´æ–°é‡‘å¸æ•°å€¼æ˜¾ç¤º
+    
+    // åˆå§‹åŒ–åœ°å›¾
     initializeMap();
 
 
   
 
-    // ´´½¨´¥ÃşÊÂ¼ş¼àÌıÆ÷
+    // åˆ›å»ºè§¦æ‘¸äº‹ä»¶ç›‘å¬å™¨
     auto listener1 = EventListenerTouchOneByOne::create();
 
     listener1->onTouchBegan = [=](Touch* touch, Event* event) {
-        // »ñÈ¡´¥ÃşÎ»ÖÃ
+        // è·å–è§¦æ‘¸ä½ç½®
         Vec2 touchLocation = touch->getLocation();
-        // ´¦Àíµã»÷Î»ÖÃµÄĞĞÎª
+        // å¤„ç†ç‚¹å‡»ä½ç½®çš„è¡Œä¸º
         handleMapAction(touchLocation.x, touchLocation.y);
         return true;
         };
@@ -120,10 +139,10 @@ bool MAP_SCENE::init()
 
 void MAP_SCENE::initializeMap()
 {
-    // ÕâÀï¿ÉÒÔ¸ù¾İĞèÇó³õÊ¼»¯Â·¾¶¡¢ÕÏ°­Îï¡¢ËşµÈ
-    // ¾ÙÀı£º½«Ò»Ğ©ÕÏ°­ÎïÉèÖÃÎª1
+    // è¿™é‡Œå¯ä»¥æ ¹æ®éœ€æ±‚åˆå§‹åŒ–è·¯å¾„ã€éšœç¢ç‰©ã€å¡”ç­‰
+    // ä¸¾ä¾‹ï¼šå°†ä¸€äº›éšœç¢ç‰©è®¾ç½®ä¸º1
     //map1
-    map[2][1] = PATH;   // (2, 3) ÊÇÂ·¾¶
+    map[2][1] = PATH;   // (2, 3) æ˜¯è·¯å¾„
     map[3][1] = PATH;
     map[4][1] = PATH;
     map[5][1] = PATH;
@@ -180,30 +199,30 @@ void MAP_SCENE::initializeMap()
 
 
 
-void MAP_SCENE::handleMapAction(int row, int col) //ÔİÊ±ÓÃÎÄ×Ö±íÊ¾ ĞèÒªÌí¼Ó
+void MAP_SCENE::handleMapAction(int row, int col) //æš‚æ—¶ç”¨æ–‡å­—è¡¨ç¤º éœ€è¦æ·»åŠ 
 {
-    // ÅĞ¶Ïµã»÷µÄµØ·½ÊÇÊ²Ã´×´Ì¬
+    // åˆ¤æ–­ç‚¹å‡»çš„åœ°æ–¹æ˜¯ä»€ä¹ˆçŠ¶æ€
     if (map[row][col] == BARRIER)
     {
-        // Èç¹ûÊÇÕÏ°­Îï£¬²»ÄÜ·ÅËş
-        cocos2d::log("ÎŞ·¨·ÅÖÃËş£¬Î»ÖÃ±»ÕÏ°­ÎïÕ¼ÓÃ£¡");
+        // å¦‚æœæ˜¯éšœç¢ç‰©ï¼Œä¸èƒ½æ”¾å¡”
+        cocos2d::log("æ— æ³•æ”¾ç½®å¡”ï¼Œä½ç½®è¢«éšœç¢ç‰©å ç”¨ï¼");
     }
     else if (map[row][col] == EXISTED_TOWER)
     {
-        // Èç¹ûÒÑ¾­ÓĞËş£¬²»ÄÜÔÙ·ÅÖÃ
-        cocos2d::log("¸ÃÎ»ÖÃÒÑÓĞËş£¡");
+        // å¦‚æœå·²ç»æœ‰å¡”ï¼Œä¸èƒ½å†æ”¾ç½®
+        cocos2d::log("è¯¥ä½ç½®å·²æœ‰å¡”ï¼");
     }
     else if (map[row][col] == PATH)
     {
-        // Èç¹ûÊÇÂ·¾¶£¬²»ÄÜ·ÅËş
-        cocos2d::log("¸ÃÎ»ÖÃÎªÂ·¾¶£¬²»ÄÜ·ÅÖÃËş£¡");
+        // å¦‚æœæ˜¯è·¯å¾„ï¼Œä¸èƒ½æ”¾å¡”
+        cocos2d::log("è¯¥ä½ç½®ä¸ºè·¯å¾„ï¼Œä¸èƒ½æ”¾ç½®å¡”ï¼");
     }
     else if (map[row][col] == SPACE)
     {
-        // Èç¹ûÊÇ¿Õ°×Î»ÖÃ£¬¿ÉÒÔ·ÅËş
+        // å¦‚æœæ˜¯ç©ºç™½ä½ç½®ï¼Œå¯ä»¥æ”¾å¡”
         map[row][col] = EXISTED_TOWER;
-        cocos2d::log("·ÅÖÃÁË·ÀÓùËş£¡");
-        // ÕâÀï¿ÉÒÔÌí¼Ó´´½¨ËşµÄÂß¼­£¬ÀıÈç´´½¨Ò»¸öËşµÄ¾«Áé
+        cocos2d::log("æ”¾ç½®äº†é˜²å¾¡å¡”ï¼");
+        // è¿™é‡Œå¯ä»¥æ·»åŠ åˆ›å»ºå¡”çš„é€»è¾‘ï¼Œä¾‹å¦‚åˆ›å»ºä¸€ä¸ªå¡”çš„ç²¾çµ
         // cocos2d::Sprite* tower = cocos2d::Sprite::create("tower.png");
         // tower->setPosition(array_to_vec2(row, col));
         // this->addChild(tower);
@@ -213,13 +232,13 @@ void MAP_SCENE::handleMapAction(int row, int col) //ÔİÊ±ÓÃÎÄ×Ö±íÊ¾ ĞèÒªÌí¼Ó
 
 void MAP_SCENE::onTouchBegan(cocos2d::Touch* touch, cocos2d::Event* event)
 {
-    // »ñÈ¡´¥ÃşÎ»ÖÃ
+    // è·å–è§¦æ‘¸ä½ç½®
     cocos2d::Vec2 touchLocation = touch->getLocation();
 
-    // ½«ÊÀ½ç×ø±ê×ª»»ÎªÊı×é×ø±ê
+    // å°†ä¸–ç•Œåæ ‡è½¬æ¢ä¸ºæ•°ç»„åæ ‡
     array arr = vec2_to_array(touchLocation);
 
-    // ´¦Àíµã»÷Î»ÖÃµÄĞĞÎª
+    // å¤„ç†ç‚¹å‡»ä½ç½®çš„è¡Œä¸º
     handleMapAction(arr.row, arr.col);
 
     //return true;
