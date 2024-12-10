@@ -31,6 +31,14 @@ array vec2_to_array(Vec2 vec) { //返回array类型，即数组
 }
 
 /**********************  全局变量  ***********************/
+//关卡选项
+int level=1;//关卡选择
+int isSpeedUp;//是否加速
+int isPause;//是否暂停
+//游戏内数据
+int allWaves=20;//总的波数
+int currentWaves = 14;//当前怪物的波数
+int carrotHP = 10;//记录萝卜的血量
 int coinNumber = 1234;//记录当前金币的数量
 /*********************************************************/
 
@@ -172,9 +180,98 @@ bool MAP_SCENE::init()
     coin_number->setPosition(282, 980);
     this->addChild(coin_number);
     coin_number->setString(std::to_string(coinNumber));// 更新金币数值显示
+        //波数显示
+    auto waves_image = Sprite::create("/GamePlayScene/wave_number.png");
+    waves_image->setPosition(Vec2(origin.x + visibleSize.width * 0.4 ,
+        origin.y + visibleSize.height * 0.95 + 12));
+    this->addChild(waves_image);
+    auto waves_label = Label::createWithTTF(std::to_string(currentWaves / 10 % 10) + "    " + std::to_string(currentWaves % 10), "/fonts/TMON Monsori.ttf", 38);
+    waves_label->setName("WavesLabel");
+    waves_label->setColor(Color3B::YELLOW);
+    waves_label->setPosition(Vec2(origin.x + visibleSize.width * 0.4 ,
+        origin.y + visibleSize.height * 0.94 + 14));
+    this->addChild(waves_label);
+    auto waves_txt = Label::createWithTTF("/ " + std::to_string(allWaves) + " Waves", "/fonts/TMON Monsori.ttf", 40);
+    waves_txt->setPosition(Vec2(origin.x + visibleSize.width * 0.525 ,
+        origin.y + visibleSize.height * 0.94 + 16));
+    this->addChild(waves_txt);
+    
+    //障碍物初始化
+    if (level == 1) {
+        auto barrierManager = BarrierManager::create();
+        // 添加不同位置和类型的障碍物
+        barrierManager->BarrierAppear(BARRIER_1_1, 320, 448, 1);
+        barrierManager->BarrierAppear(BARRIER_1_1, 1216, 448, 1);
+        barrierManager->BarrierAppear(BARRIER_1_2, 576, 576, 1);
+        barrierManager->BarrierAppear(BARRIER_1_2, 960, 576, 1);
+        barrierManager->BarrierAppear(BARRIER_2_1, 768, 320, 2);
+        barrierManager->BarrierAppear(BARRIER_4_1, 768, 768, 4);
+        barrierManager->BarrierAppear(BARRIER_4_2, 512, 768, 4);
+        barrierManager->BarrierAppear(BARRIER_4_2, 1024, 768, 4);
+
+        this->addChild(barrierManager);
+        barrierManager->createMouseEventListener();
+    }
+    if (level == 2) {
+        auto barrierManager = BarrierManager::create();
+        // 添加不同位置和类型的障碍物
+        barrierManager->BarrierAppear(BARRIER_1_1, 836, 832, 1);
+        barrierManager->BarrierAppear(BARRIER_1_1, 836, 192, 1);
+        barrierManager->BarrierAppear(BARRIER_1_1, 964, 192, 1);
+        barrierManager->BarrierAppear(BARRIER_1_2, 320, 448, 1);
+        barrierManager->BarrierAppear(BARRIER_1_2, 448, 448, 1);
+        barrierManager->BarrierAppear(BARRIER_1_2, 1216, 192, 1);
+        barrierManager->BarrierAppear(BARRIER_1_2, 1088, 832, 1);
+        barrierManager->BarrierAppear(BARRIER_1_2, 832, 576, 1);
+        barrierManager->BarrierAppear(BARRIER_2_1, 512, 192, 2);
+        barrierManager->BarrierAppear(BARRIER_2_2, 640, 448, 2);
+        barrierManager->BarrierAppear(BARRIER_4_1, 1024, 512, 4);
+        barrierManager->BarrierAppear(BARRIER_4_2, 1408, 512, 4);
+        barrierManager->BarrierAppear(BARRIER_4_2, 384, 768, 4);
+
+        this->addChild(barrierManager);
+        barrierManager->createMouseEventListener();
+    }
+    if (level == 3) {
+        auto barrierManager = BarrierManager::create();
+        // 添加不同位置和类型的障碍物
+        barrierManager->BarrierAppear(BARRIER_1_1, 64, 832, 1);
+        barrierManager->BarrierAppear(BARRIER_1_1, 192, 832, 1);
+        barrierManager->BarrierAppear(BARRIER_1_2, 320, 832, 1);
+        barrierManager->BarrierAppear(BARRIER_1_1, 448, 832, 1);
+        barrierManager->BarrierAppear(BARRIER_1_2, 576, 832, 1);
+        barrierManager->BarrierAppear(BARRIER_1_2, 960, 832, 1);
+        barrierManager->BarrierAppear(BARRIER_1_2, 1088, 832, 1);
+        barrierManager->BarrierAppear(BARRIER_1_1, 1472, 832, 1);
+        barrierManager->BarrierAppear(BARRIER_2_1, 1280, 832, 2);
+        barrierManager->BarrierAppear(BARRIER_1_2, 832, 448, 1);
+        barrierManager->BarrierAppear(BARRIER_1_2, 64, 704, 1);
+        barrierManager->BarrierAppear(BARRIER_1_1, 64, 576, 1);
+        barrierManager->BarrierAppear(BARRIER_1_2, 1472, 704, 1);
+        barrierManager->BarrierAppear(BARRIER_1_1, 1472, 576, 1);
+        barrierManager->BarrierAppear(BARRIER_1_2, 1472, 448, 1);
+        barrierManager->BarrierAppear(BARRIER_1_1, 1472, 320, 1);
+        barrierManager->BarrierAppear(BARRIER_1_2, 1472, 192, 1);
+        barrierManager->BarrierAppear(BARRIER_1_1, 1344, 192, 1);
+        barrierManager->BarrierAppear(BARRIER_1_2, 960, 64, 1);
+        barrierManager->BarrierAppear(BARRIER_1_1, 832, 64, 1);
+        barrierManager->BarrierAppear(BARRIER_2_1, 512, 704, 2);
+        barrierManager->BarrierAppear(BARRIER_2_1, 1152, 64, 2);
+        barrierManager->BarrierAppear(BARRIER_2_1, 768, 320, 2);
+        barrierManager->BarrierAppear(BARRIER_2_2, 512, 576, 2);
+        barrierManager->BarrierAppear(BARRIER_4_1, 128, 384, 4); 
+        barrierManager->BarrierAppear(BARRIER_4_1, 512, 256, 4);
+        barrierManager->BarrierAppear(BARRIER_4_1, 1152, 512, 4);
+        barrierManager->BarrierAppear(BARRIER_4_2, 768, 768, 4);
+        barrierManager->BarrierAppear(BARRIER_4_2, 256, 640, 4);
+        this->addChild(barrierManager);
+        barrierManager->createMouseEventListener();
+    }
+
     
     // 初始化地图
     initializeMap();
+
     
     // 创建触摸事件监听器
     auto listener1 = EventListenerTouchOneByOne::create();
