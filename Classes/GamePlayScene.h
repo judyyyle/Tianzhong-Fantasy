@@ -5,7 +5,7 @@
 #include "cocos2d.h"
 #include<vector>
 
-//ºê¶¨Òå
+//å®å®šä¹‰
 #define PATH -1
 #define SPACE 0
 #define BARRIER 1
@@ -16,25 +16,29 @@
 class MAP_SCENE : public cocos2d::Scene
 {
 public:
-    MAP_SCENE();        // ¹¹Ôìº¯Êı
-    virtual ~MAP_SCENE(); // Îö¹¹º¯Êı
+    MAP_SCENE();        // æ„é€ å‡½æ•°
+    virtual ~MAP_SCENE(); // ææ„å‡½æ•°
 
-    // ´´½¨³¡¾°µÄ¾²Ì¬·½·¨
+    // åˆ›å»ºåœºæ™¯çš„é™æ€æ–¹æ³•
     static MAP_SCENE* create();
 
-    // ³õÊ¼»¯·½·¨£¬×ÓÀà¿ÉÒÔÖØĞ´
+    // åˆå§‹åŒ–æ–¹æ³•ï¼Œå­ç±»å¯ä»¥é‡å†™
      bool init() override;
 
-    // ÓÃÓÚ³õÊ¼»¯µØÍ¼£¨×ÓÀàÖØĞ´´Ë·½·¨£©
+    // ç”¨äºåˆå§‹åŒ–åœ°å›¾ï¼ˆå­ç±»é‡å†™æ­¤æ–¹æ³•ï¼‰
     void initializeMap() ;
     void onTouchBegan(cocos2d::Touch* touch, cocos2d::Event* event);
-
-
+    void showBuildFeedback(int row, int col);
+    void clearWarningSprites();//æ¸…é™¤æç¤ºå›¾æ ‡
+    void addTowerPreview(int row, int col);
+    
+    void onTowerPreviewClicked( int towerIndex, int row, int col);
 protected:
-    cocos2d::Sprite* background;  // ±³¾°
-    int map[8][12];                   // µØÍ¼×´Ì¬Êı×é
-
-    // ´¦ÀíµØÍ¼ÉÏ²»Í¬Î»ÖÃµÄĞĞÎª
+    cocos2d::Sprite* background;  // èƒŒæ™¯
+    int map[8][12];                   // åœ°å›¾çŠ¶æ€æ•°ç»„
+    bool isTowerSelected = false; // æ˜¯å¦å·²é€‰æ‹©é˜²å¾¡å¡”
+    std::vector<Node*> warningSprites; // å­˜å‚¨æç¤ºå›¾ç‰‡å’ŒæŒ‰é’®
+    // å¤„ç†åœ°å›¾ä¸Šä¸åŒä½ç½®çš„è¡Œä¸º
     void handleMapAction(int row, int col);
 };
 
