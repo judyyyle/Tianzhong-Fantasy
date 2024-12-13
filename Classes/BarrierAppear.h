@@ -1,23 +1,65 @@
-// BarrierManager.h
 #ifndef BARRIER_MANAGER_H
 #define BARRIER_MANAGER_H
 
 #include<string>
 #include<vector>
+
 #include "cocos2d.h"
+
 using namespace cocos2d;
+
+/*
+* #define BARRIER_1_1 0
+#define BARRIER_1_2 1
+#define BARRIER_2_1 2
+#define BARRIER_2_2 3
+#define BARRIER_4_1 4
+#define BARRIER_4_2 5 
+*/
+extern int mapGrid[8][12];
+
+#define PATH -1
+#define SPACE 0
+#define BARRIER 1
+#define EXISTED_TOWER 2
+
+
+
+//世界坐标与数组的转换
+static struct array_BA {
+    int row;
+    int col;
+};
+
+static Vec2 array_to_vec2_BA(int row, int col) { //返回Vec2类型，即世界坐标
+    Vec2 vec;
+    vec.x = 64 + 128 * col;
+    vec.y = 1024 - 64 - 128 * row;
+    return vec;
+}
+
+static array_BA vec2_to_array_BA(Vec2 vec) { //返回array类型，即数组
+    array_BA arr;
+    arr.row = 8 - static_cast<int>((vec.y / 128)) - 0.5;
+    arr.col = static_cast<int>((vec.x / 128));
+    return arr;
+}
+
+
 
 class BarrierInfo : public Node {
 public:
     CREATE_FUNC(BarrierInfo);
-
+   
     Sprite* barrierSprite = nullptr;  // 障碍物
     Sprite* hpHolder = nullptr;      // 血条背景
     Sprite* hpSlider = nullptr;      // 血条滑块
     Sprite* arrow = nullptr;         // 血条滑块
     int hp = 0;                      // 当前血量
     int maxHp = 0;                   // 最大血量
-    int Type=-1;
+    int Type = 1;
+    int gridX = -1;  
+    int gridY = -1; 
     // 初始化障碍物
     bool initWithParams(const std::string& spritePath, const Vec2& position, int initialHp,int type) {
         // 创建障碍物
@@ -27,13 +69,16 @@ public:
         this->addChild(barrierSprite);
 
         // 初始化血量
-        maxHp = initialHp*8;
-        hp = initialHp*8;
-        Type=type;
+        maxHp = initialHp * 8;
+        hp = initialHp * 8;
+        Type = type;
+        gridX=position.x;
+        gridY = position.y ;
+     
         // 创建血条背景
         hpHolder = Sprite::create("/Barrier/HpHolder.png");
         hpHolder->setPosition(Vec2(position.x, position.y + barrierSprite->getContentSize().height / 2.25));
-        hpHolder->setVisible(false);  
+        hpHolder->setVisible(false);
         this->addChild(hpHolder);
 
         // 创建血条滑块
@@ -41,7 +86,7 @@ public:
         hpSlider->setAnchorPoint(Vec2(0, 0.5));
         hpSlider->setPosition(Vec2(hpHolder->getPositionX() - hpHolder->getContentSize().width / 2,
             hpHolder->getPositionY()));
-        hpSlider->setVisible(false);  
+        hpSlider->setVisible(false);
         this->addChild(hpSlider);
 
         // 初始化显示箭头
@@ -100,9 +145,9 @@ public:
     void BarrierAppear(int type, float positionX, float positionY, int initialHp) {
         // 障碍物的图片路径
         std::string picture[] = {
-            "/Barrier/one1.png", "/Barrier/one2.png",
-            "/Barrier/two1.png", "/Barrier/two2.png",
-            "/Barrier/four1.png", "/Barrier/four2.png"
+            "Barrier/one1.png", "Barrier/one2.png",
+            "Barrier/two1.png", "Barrier/two2.png",
+            "Barrier/four1.png", "Barrier/four2.png"
         };
 
         // 创建 BarrierInfo 实例
@@ -162,6 +207,24 @@ public:
     void removeBarrier(BarrierInfo* barrierInfo) {
         barriers.eraseObject(barrierInfo);
         barrierInfo->removeFromScene();
+        if (barrierInfo->Type == 0 || barrierInfo->Type == 1) {
+           mapGrid[vec2_to_array_BA(Vec2(barrierInfo->gridX, barrierInfo->gridY)).row][vec2_to_array_BA(Vec2(barrierInfo->gridX, barrierInfo->gridY)).col] = SPACE;
+        }
+        else if (barrierInfo->Type == 2 || barrierInfo->Type == 3) {
+          
+            mapGrid[vec2_to_array_BA(Vec2(barrierInfo->gridX-64, barrierInfo->gridY)).row][vec2_to_array_BA(Vec2(barrierInfo->gridX-64, barrierInfo->gridY)).col] = SPACE;
+            mapGrid[vec2_to_array_BA(Vec2(barrierInfo->gridX+64, barrierInfo->gridY)).row][vec2_to_array_BA(Vec2(barrierInfo->gridX+64, barrierInfo->gridY)).col] = SPACE;
+        
+        }
+        else if (barrierInfo->Type == 4 || barrierInfo->Type == 5) {
+            mapGrid[vec2_to_array_BA(Vec2(barrierInfo->gridX-64, barrierInfo->gridY-64)).row][vec2_to_array_BA(Vec2(barrierInfo->gridX-64, barrierInfo->gridY-64)).col] = SPACE;
+            mapGrid[vec2_to_array_BA(Vec2(barrierInfo->gridX + 64, barrierInfo->gridY - 64)).row][vec2_to_array_BA(Vec2(barrierInfo->gridX + 64, barrierInfo->gridY - 64)).col] = SPACE;
+            mapGrid[vec2_to_array_BA(Vec2(barrierInfo->gridX - 64, barrierInfo->gridY + 64)).row][vec2_to_array_BA(Vec2(barrierInfo->gridX - 64, barrierInfo->gridY + 64)).col] = SPACE;
+            mapGrid[vec2_to_array_BA(Vec2(barrierInfo->gridX + 64, barrierInfo->gridY + 64)).row][vec2_to_array_BA(Vec2(barrierInfo->gridX + 64, barrierInfo->gridY + 64)).col] = SPACE;
+        }
+
+        
+
     }
 
     // 取消选中障碍物
