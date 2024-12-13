@@ -4,13 +4,13 @@
 #include "LevelSelectionScene.h"
 #include<vector>
 #include "ui/CocosGUI.h"
-#include <memory>  // ÒıÈëÖÇÄÜÖ¸Õë
+#include <memory>  // å¼•å…¥æ™ºèƒ½æŒ‡é’ˆ
 #include "cocos2d.h"
 #include "Tower.h"
 USING_NS_CC;
 
 using namespace cocos2d::ui;
-// ÔÚ MAP_SCENE ÀàÖĞ£¬Ìí¼ÓÒ»¸ö³ÉÔ±±äÁ¿À´±£´æÌáÊ¾Í¼±ê
+// åœ¨ MAP_SCENE ç±»ä¸­ï¼Œæ·»åŠ ä¸€ä¸ªæˆå‘˜å˜é‡æ¥ä¿å­˜æç¤ºå›¾æ ‡
 
 
 
@@ -23,25 +23,25 @@ using namespace cocos2d::ui;
 
 
 
-/**********************  È«¾Ö±äÁ¿  ***********************/
-//¹Ø¿¨Ñ¡Ïî
-int level = 1;//¹Ø¿¨Ñ¡Ôñ
+/**********************  å…¨å±€å˜é‡  ***********************/
+//å…³å¡é€‰é¡¹
+int level = 1;//å…³å¡é€‰æ‹©
 
 
-//ÊÀ½ç×ø±êÓëÊı×éµÄ×ª»»
+//ä¸–ç•Œåæ ‡ä¸æ•°ç»„çš„è½¬æ¢
 struct array {
     int row;
     int col;
 };
 
-Vec2 array_to_vec2(int row, int col) { //·µ»ØVec2ÀàĞÍ£¬¼´ÊÀ½ç×ø±ê
+Vec2 array_to_vec2(int row, int col) { //è¿”å›Vec2ç±»å‹ï¼Œå³ä¸–ç•Œåæ ‡
     Vec2 vec;
     vec.x = 64 + 128 * col;
     vec.y = 1024 - 64 - 128 * row;
     return vec;
 }
 
-array vec2_to_array(Vec2 vec) { //·µ»ØarrayÀàĞÍ£¬¼´Êı×é
+array vec2_to_array(Vec2 vec) { //è¿”å›arrayç±»å‹ï¼Œå³æ•°ç»„
     array arr;
     arr.row = 8 - static_cast<int>((vec.y / 128)) - 0.5;
     arr.col = static_cast<int>((vec.x / 128));
@@ -54,13 +54,13 @@ array vec2_to_array(Vec2 vec) { //·µ»ØarrayÀàĞÍ£¬¼´Êı×é
 MAP_SCENE::MAP_SCENE()
     : background(nullptr)
 {
-    // ³õÊ¼»¯µØÍ¼×´Ì¬Êı×é
-    memset(map, SPACE, sizeof(map)); // Ä¬ÈÏËùÓĞÎ»ÖÃÎª¿Õ°×
+    // åˆå§‹åŒ–åœ°å›¾çŠ¶æ€æ•°ç»„
+    memset(map, SPACE, sizeof(map)); // é»˜è®¤æ‰€æœ‰ä½ç½®ä¸ºç©ºç™½
 }
 
 MAP_SCENE::~MAP_SCENE()
 {
-    // ×ÊÔ´ÇåÀí£¨Èç¹ûÓĞµÄ»°£©
+    // èµ„æºæ¸…ç†ï¼ˆå¦‚æœæœ‰çš„è¯ï¼‰
 }
 
 MAP_SCENE* MAP_SCENE::create()
@@ -80,10 +80,10 @@ MAP_SCENE* MAP_SCENE::create()
 
 void MAP_SCENE::initializeMap()
 {
-    // ÕâÀï¿ÉÒÔ¸ù¾İĞèÇó³õÊ¼»¯Â·¾¶¡¢ÕÏ°­Îï¡¢ËşµÈ
+    // è¿™é‡Œå¯ä»¥æ ¹æ®éœ€æ±‚åˆå§‹åŒ–è·¯å¾„ã€éšœç¢ç‰©ã€å¡”ç­‰
 
     //map1
-    map[2][1] = PATH;   // (2, 3) ÊÇÂ·¾¶
+    map[2][1] = PATH;   // (2, 3) æ˜¯è·¯å¾„
     map[3][1] = PATH;
     map[4][1] = PATH;
     map[5][1] = PATH;
@@ -144,15 +144,15 @@ bool MAP_SCENE::init()
         return false;
     }
 
-    // »ù±¾³õÊ¼»¯£¬±ÈÈçÌí¼Ó±³¾°
+    // åŸºæœ¬åˆå§‹åŒ–ï¼Œæ¯”å¦‚æ·»åŠ èƒŒæ™¯
 
-    // »ñÈ¡ÆÁÄ»´óĞ¡
+    // è·å–å±å¹•å¤§å°
     auto visibleSize = Director::getInstance()->getVisibleSize();
     Vec2 origin = Director::getInstance()->getVisibleOrigin();
 
 
 
-    background = cocos2d::Sprite::create("GamePlayScene/map1.png");//ÏÈĞ´ËÀµÚÒ»ÕÅµØÍ¼ £¬ÈçºÎÑ¡ÔñµÚ¼¸ÕÅµØÍ¼´ıĞŞ¸Ä
+    background = cocos2d::Sprite::create("GamePlayScene/map1.png");//å…ˆå†™æ­»ç¬¬ä¸€å¼ åœ°å›¾ ï¼Œå¦‚ä½•é€‰æ‹©ç¬¬å‡ å¼ åœ°å›¾å¾…ä¿®æ”¹
     if (background == nullptr)
     {
         // problemLoading("'menu.png'");
@@ -163,17 +163,17 @@ bool MAP_SCENE::init()
         background->setPosition(Vec2(visibleSize.width / 2 + origin.x, visibleSize.height / 2 + origin.y));
 
 
-        background->setContentSize(Size(1536, 1024)); // ÉèÖÃÎª1536x1024µÄ´óĞ¡
+        background->setContentSize(Size(1536, 1024)); // è®¾ç½®ä¸º1536x1024çš„å¤§å°
 
 
         // add the sprite as a child to this layer
-        this->addChild(background, 0);//±³¾°²ã¼¶Îª0£¬È·±£ËüÔÚ×îµ×²ã
+        this->addChild(background, 0);//èƒŒæ™¯å±‚çº§ä¸º0ï¼Œç¡®ä¿å®ƒåœ¨æœ€åº•å±‚
     }
    
     if (level == 1) {
         auto barrierManager = BarrierManager::create();
         array barrierPosition;
-        // Ìí¼Ó²»Í¬Î»ÖÃºÍÀàĞÍµÄÕÏ°­Îï
+        // æ·»åŠ ä¸åŒä½ç½®å’Œç±»å‹çš„éšœç¢ç‰©
         barrierManager->BarrierAppear(BARRIER_1_1, 320, 448, 1);
         barrierPosition = vec2_to_array({ 320, 448 });
         map[barrierPosition.row][barrierPosition.col] = BARRIER;
@@ -204,33 +204,33 @@ bool MAP_SCENE::init()
     }
 
 
-    // ³õÊ¼»¯µØÍ¼
+    // åˆå§‹åŒ–åœ°å›¾
     initializeMap();
 
-    // ´´½¨´¥ÃşÊÂ¼ş¼àÌıÆ÷
+    // åˆ›å»ºè§¦æ‘¸äº‹ä»¶ç›‘å¬å™¨
     auto listener1 = EventListenerTouchOneByOne::create();
 
-    // ´¥Ãş¿ªÊ¼Ê±µÄ»Øµ÷º¯Êı
+    // è§¦æ‘¸å¼€å§‹æ—¶çš„å›è°ƒå‡½æ•°
     listener1->onTouchBegan = [=](Touch* touch, Event* event) {
         Vec2 touchLocation = touch->getLocation();
         array arr = vec2_to_array(touchLocation);
         handleMapAction(arr.row, arr.col);
-        return true; // ·µ»Øtrue±íÊ¾ÍÌÊÉ¸ÃÊÂ¼ş£¬ÆäËûµØ·½²»ÔÙ´¦Àí
+        return true; // è¿”å›trueè¡¨ç¤ºåå™¬è¯¥äº‹ä»¶ï¼Œå…¶ä»–åœ°æ–¹ä¸å†å¤„ç†
         };
 
-    // ´¥ÃşÒÆ¶¯Ê±µÄ»Øµ÷º¯Êı
+    // è§¦æ‘¸ç§»åŠ¨æ—¶çš„å›è°ƒå‡½æ•°
    /*listener1->onTouchMoved = [=](Touch* touch, Event* event) {
         Vec2 touchLocation = touch->getLocation();
         array arr = vec2_to_array(touchLocation);
 
-        // ÊµÊ±·´À¡£¬¿ÉÄÜĞèÒªÕ¹Ê¾ÌáÊ¾£¬»òÕß¸Ä±äÄ¿±êÎ»ÖÃµÄ×´Ì¬
-        // ±ÈÈç¸øÍæ¼ÒÏÔÊ¾Ò»¸ö¡°²»ÄÜ·ÅÖÃËş¡±µÄÌáÊ¾
+        // å®æ—¶åé¦ˆï¼Œå¯èƒ½éœ€è¦å±•ç¤ºæç¤ºï¼Œæˆ–è€…æ”¹å˜ç›®æ ‡ä½ç½®çš„çŠ¶æ€
+        // æ¯”å¦‚ç»™ç©å®¶æ˜¾ç¤ºä¸€ä¸ªâ€œä¸èƒ½æ”¾ç½®å¡”â€çš„æç¤º
         showBuildFeedback(arr.row, arr.col);
         };*/
 
-        // ´¥Ãş½áÊøÊ±µÄ»Øµ÷º¯Êı
+        // è§¦æ‘¸ç»“æŸæ—¶çš„å›è°ƒå‡½æ•°
     listener1->onTouchEnded = [=](Touch* touch, Event* event) {
-        // ´¥Ãş½áÊø£¬È·±£·ÅÖÃËş
+        // è§¦æ‘¸ç»“æŸï¼Œç¡®ä¿æ”¾ç½®å¡”
         Vec2 touchLocation = touch->getLocation();
         array arr = vec2_to_array(touchLocation);
         handleMapAction(arr.row, arr.col);
@@ -242,27 +242,27 @@ bool MAP_SCENE::init()
     return true;
 }
 
-// ´¦ÀíÊµÊ±·´À¡µÄº¯Êı
+// å¤„ç†å®æ—¶åé¦ˆçš„å‡½æ•°
 void MAP_SCENE::showBuildFeedback(int row, int col)
 {
     if (map[row][col] == PATH) {
-        // Èç¹û²»ÄÜ·ÅËş£¬ÔòÏÔÊ¾ÌáÊ¾£¨ÀıÈçÌáÊ¾¿ò»òÍ¼±ê£©
+        // å¦‚æœä¸èƒ½æ”¾å¡”ï¼Œåˆ™æ˜¾ç¤ºæç¤ºï¼ˆä¾‹å¦‚æç¤ºæ¡†æˆ–å›¾æ ‡ï¼‰
         auto feedback = Sprite::create("GamePlayScene/cantBuild.png");
         if (feedback != nullptr) {
             feedback->setPosition(array_to_vec2(row, col));
-            this->addChild(feedback, 2); // È·±£ÔÚÆäËûÄÚÈİÖ®ÉÏ
-            // ´´½¨ÑÓÊ± 0.5 ÃëºóÉ¾³ı¾«ÁéµÄ¶¯×÷
-            auto delay = DelayTime::create(0.5f);  // ÑÓ³Ù 0.5 Ãë
+            this->addChild(feedback, 2); // ç¡®ä¿åœ¨å…¶ä»–å†…å®¹ä¹‹ä¸Š
+            // åˆ›å»ºå»¶æ—¶ 0.5 ç§’ååˆ é™¤ç²¾çµçš„åŠ¨ä½œ
+            auto delay = DelayTime::create(0.5f);  // å»¶è¿Ÿ 0.5 ç§’
             auto remove = CallFunc::create([this, feedback]() {
-                this->removeChild(feedback);  // É¾³ı¾«Áé
+                this->removeChild(feedback);  // åˆ é™¤ç²¾çµ
                 });
 
-            // Ö´ĞĞ¶¯×÷
+            // æ‰§è¡ŒåŠ¨ä½œ
             feedback->runAction(Sequence::create(delay, remove, nullptr));
         }
     }
     else if (map[row][col] == SPACE) {
-        // Èç¹û¿ÉÒÔ·ÅËş£¬¿ÉÄÜĞèÒªÏÔÊ¾Ò»¸ö²»Í¬µÄ·´À¡£¬»òÕßÇå³ıÖ®Ç°µÄ·´À¡
+        // å¦‚æœå¯ä»¥æ”¾å¡”ï¼Œå¯èƒ½éœ€è¦æ˜¾ç¤ºä¸€ä¸ªä¸åŒçš„åé¦ˆï¼Œæˆ–è€…æ¸…é™¤ä¹‹å‰çš„åé¦ˆ
         auto feedback = Sprite::create("GamePlayScene/Grid.png");
         if (feedback != nullptr) {
             feedback->setPosition(array_to_vec2(row, col));
@@ -280,33 +280,33 @@ void MAP_SCENE::showBuildFeedback(int row, int col)
 
 void MAP_SCENE::handleMapAction(int row, int col)
 {
-    // Èç¹ûÎ´Ñ¡Ôñ·ÀÓùËş£¬½ûÖ¹ÆäËû½»»¥
+    // å¦‚æœæœªé€‰æ‹©é˜²å¾¡å¡”ï¼Œç¦æ­¢å…¶ä»–äº¤äº’
     if (!isTowerSelected)
     {
-        cocos2d::log("ÇëÏÈÑ¡ÔñÒ»¸ö·ÀÓùËş£¡");
+        cocos2d::log("è¯·å…ˆé€‰æ‹©ä¸€ä¸ªé˜²å¾¡å¡”ï¼");
         return;
     }
 
-    // Çå³ıÖ®Ç°µÄÌáÊ¾
+    // æ¸…é™¤ä¹‹å‰çš„æç¤º
     clearWarningSprites();
 
-    // ¸ù¾İµã»÷µÄÎ»ÖÃ´¦ÀíÂß¼­
+    // æ ¹æ®ç‚¹å‡»çš„ä½ç½®å¤„ç†é€»è¾‘
     if (map[row][col] == BARRIER)
     {
-        cocos2d::log("ÎŞ·¨·ÅÖÃËş£¬Î»ÖÃ±»ÕÏ°­ÎïÕ¼ÓÃ£¡");
+        cocos2d::log("æ— æ³•æ”¾ç½®å¡”ï¼Œä½ç½®è¢«éšœç¢ç‰©å ç”¨ï¼");
     }
     else if (map[row][col] == EXISTED_TOWER)
     {
-        cocos2d::log("¸ÃÎ»ÖÃÒÑÓĞËş£¡");
+        cocos2d::log("è¯¥ä½ç½®å·²æœ‰å¡”ï¼");
     }
     else if (map[row][col] == PATH)
     {
-        cocos2d::log("¸ÃÎ»ÖÃÎªÂ·¾¶£¬²»ÄÜ·ÅÖÃËş£¡");
+        cocos2d::log("è¯¥ä½ç½®ä¸ºè·¯å¾„ï¼Œä¸èƒ½æ”¾ç½®å¡”ï¼");
     }
     else if (map[row][col] == SPACE)
     {
         //map[row][col] = EXISTED_TOWER;
-        cocos2d::log("·ÅÖÃÁË·ÀÓùËş£¡");
+        cocos2d::log("æ”¾ç½®äº†é˜²å¾¡å¡”ï¼");
     }
 }
 
@@ -320,48 +320,48 @@ void MAP_SCENE::addTowerPreview(int row, int col)
         "GamePlayScene/SunflowerButton.png"
     };
 
-    // Ã¿¸ö°´Å¥Ö®¼äµÄË®Æ½¼ä¾à
+    // æ¯ä¸ªæŒ‰é’®ä¹‹é—´çš„æ°´å¹³é—´è·
     float offsetX = 128;
-    float offsetY = 128;  // ´¹Ö±·½ÏòµÄ¼ä¾à
+    float offsetY = 128;  // å‚ç›´æ–¹å‘çš„é—´è·
     float startX = array_to_vec2(row, col).x;
     float startY = array_to_vec2(row, col).y;
 
-    // Æ«ÒÆÁ¿£ºÈ·±£°´Å¥²»»áÓëgridÖØµş
-    float offsetXForPreview = startX - 128;  // ½«°´Å¥ÉÔÎ¢ÏòÓÒÆ«ÒÆ
-    float offsetYForPreview = startY + 64;  // ½«°´Å¥ÉÔÎ¢ÏòÏÂÆ«ÒÆ
+    // åç§»é‡ï¼šç¡®ä¿æŒ‰é’®ä¸ä¼šä¸gridé‡å 
+    float offsetXForPreview = startX - 128;  // å°†æŒ‰é’®ç¨å¾®å‘å³åç§»
+    float offsetYForPreview = startY + 64;  // å°†æŒ‰é’®ç¨å¾®å‘ä¸‹åç§»
 
-    // ¼ÆËã°´Å¥Î»ÖÃ£¬·ÀÖ¹³¬³öÆÁÄ»·¶Î§
-    int screenWidth = 12;  // µØÍ¼µÄÁĞÊı
-    int screenHeight = 8;  // µØÍ¼µÄĞĞÊı
+    // è®¡ç®—æŒ‰é’®ä½ç½®ï¼Œé˜²æ­¢è¶…å‡ºå±å¹•èŒƒå›´
+    int screenWidth = 12;  // åœ°å›¾çš„åˆ—æ•°
+    int screenHeight = 8;  // åœ°å›¾çš„è¡Œæ•°
 
     for (int i = 0; i < towerImages.size(); ++i)
     {
         auto button = ui::Button::create(towerImages[i]);
         if (button != nullptr)
         {
-            // Ê¹ÓÃÊı×é×ø±êÀ´ÅÅÁĞ°´Å¥
+            // ä½¿ç”¨æ•°ç»„åæ ‡æ¥æ’åˆ—æŒ‰é’®
             float offsetXForButton = offsetXForPreview + (i * offsetX);
 
-            // Èç¹û³¬³öÆÁÄ»ÓÒ±ß½ç£¬Ôòµ÷Õûµ½ÏÂÒ»ĞĞ
+            // å¦‚æœè¶…å‡ºå±å¹•å³è¾¹ç•Œï¼Œåˆ™è°ƒæ•´åˆ°ä¸‹ä¸€è¡Œ
             if (offsetXForButton + button->getContentSize().width > screenWidth * offsetX)
             {
-                offsetXForButton = offsetXForPreview;  // µ÷Õû°´Å¥Îª´Ó×î×ó±ß¿ªÊ¼
-                offsetYForPreview -= offsetY;  // »»ĞĞ·ÅÖÃ
+                offsetXForButton = offsetXForPreview;  // è°ƒæ•´æŒ‰é’®ä¸ºä»æœ€å·¦è¾¹å¼€å§‹
+                offsetYForPreview -= offsetY;  // æ¢è¡Œæ”¾ç½®
             }
 
-            // È·±£°´Å¥Î»ÖÃ²»»á³¬³öµØÍ¼·¶Î§
+            // ç¡®ä¿æŒ‰é’®ä½ç½®ä¸ä¼šè¶…å‡ºåœ°å›¾èŒƒå›´
             if (offsetXForPreview < 0) offsetXForPreview = 0;
             if (offsetYForPreview < 0) offsetYForPreview = 0;
 
-            // ÉèÖÃ°´Å¥Î»ÖÃ
+            // è®¾ç½®æŒ‰é’®ä½ç½®
             button->setPosition(Vec2(offsetXForButton, offsetYForPreview));
             this->addChild(button, 1);
             warningSprites.push_back(button);
 
-            // °´Å¥µã»÷ÊÂ¼ş
+            // æŒ‰é’®ç‚¹å‡»äº‹ä»¶
             button->addClickEventListener([this, i, row, col](Ref* sender) {
-                isTowerSelected = true;  // ¸üĞÂ×´Ì¬
-                onTowerPreviewClicked(i, row, col);  // ´¦Àíµã»÷Âß¼­
+                isTowerSelected = true;  // æ›´æ–°çŠ¶æ€
+                onTowerPreviewClicked(i, row, col);  // å¤„ç†ç‚¹å‡»é€»è¾‘
                 });
         }
     }
@@ -369,87 +369,87 @@ void MAP_SCENE::addTowerPreview(int row, int col)
 
 void MAP_SCENE::onTowerPreviewClicked(int towerIndex, int row, int col)
 {
-    // ¸ù¾İµã»÷µÄËşÀàĞÍÑ¡ÔñÏàÓ¦Í¼Æ¬²¢´´½¨¶ÔÓ¦µÄËşÀà
+    // æ ¹æ®ç‚¹å‡»çš„å¡”ç±»å‹é€‰æ‹©ç›¸åº”å›¾ç‰‡å¹¶åˆ›å»ºå¯¹åº”çš„å¡”ç±»
     Tower* tower = nullptr;
 
     switch (towerIndex)
     {
         case 0:
-            // ´´½¨ BottleTower ÊµÀı
+            // åˆ›å»º BottleTower å®ä¾‹
             tower = BottleTower::create("GamePlayScene/bottle_level_1.png");
             break;
         case 1:
-            // ´´½¨ ShitTower ÊµÀı£¨¼ÙÉèÄãÓĞÕâ¸öËşÀà£©
+            // åˆ›å»º ShitTower å®ä¾‹ï¼ˆå‡è®¾ä½ æœ‰è¿™ä¸ªå¡”ç±»ï¼‰
             tower = ShitTower::create("GamePlayScene/shit_level_1.png");
             break;
         case 2:
-            // ´´½¨ SunflowerTower ÊµÀı£¨¼ÙÉèÄãÓĞÕâ¸öËşÀà£©
+            // åˆ›å»º SunflowerTower å®ä¾‹ï¼ˆå‡è®¾ä½ æœ‰è¿™ä¸ªå¡”ç±»ï¼‰
             tower = SunflowerTower::create("GamePlayScene/sun_level_1.png");
             break;
         default:
-            return; // Èç¹ûÃ»ÓĞÆ¥ÅäµÄËşÀàĞÍ£¬Ö±½Ó·µ»Ø
+            return; // å¦‚æœæ²¡æœ‰åŒ¹é…çš„å¡”ç±»å‹ï¼Œç›´æ¥è¿”å›
     }
 
-    // ¼ì²éËşÊÇ·ñ´´½¨³É¹¦
+    // æ£€æŸ¥å¡”æ˜¯å¦åˆ›å»ºæˆåŠŸ
     if (tower != nullptr)
     {
-        tower->setPosition(array_to_vec2(row, col));  // ÔÚgridÎ»ÖÃ·ÅÖÃËş
-        int tag = row * 100 + col;  // ÎªËş·ÖÅäÎ¨Ò»µÄtag
-        tower->setTag(tag);  // ¸øËşÉèÖÃtag
-        this->addChild(tower, 1);  // ½«ËşÌí¼Óµ½³¡¾°
+        tower->setPosition(array_to_vec2(row, col));  // åœ¨gridä½ç½®æ”¾ç½®å¡”
+        int tag = row * 100 + col;  // ä¸ºå¡”åˆ†é…å”¯ä¸€çš„tag
+        tower->setTag(tag);  // ç»™å¡”è®¾ç½®tag
+        this->addChild(tower, 1);  // å°†å¡”æ·»åŠ åˆ°åœºæ™¯
     }
     towerArray[row][col] = tower;
 
-    // ¸üĞÂµØÍ¼Êı¾İ
-    map[row][col] = EXISTED_TOWER;  // ÉèÖÃ¸ÃÎ»ÖÃÒÑ·ÅÖÃËş
+    // æ›´æ–°åœ°å›¾æ•°æ®
+    map[row][col] = EXISTED_TOWER;  // è®¾ç½®è¯¥ä½ç½®å·²æ”¾ç½®å¡”
 
-    // ¸üĞÂ×´Ì¬
-    isTowerSelected = true;  // ÉèÖÃ·ÀÓùËşÒÑÑ¡Ôñ
+    // æ›´æ–°çŠ¶æ€
+    isTowerSelected = true;  // è®¾ç½®é˜²å¾¡å¡”å·²é€‰æ‹©
 
-    // Çå³ıËùÓĞÌáÊ¾
+    // æ¸…é™¤æ‰€æœ‰æç¤º
     clearWarningSprites();
 }
 void MAP_SCENE::handleTowerClick(int row, int col)
 {
-    // »ñÈ¡µã»÷Î»ÖÃµÄËş¶ÔÏó
+    // è·å–ç‚¹å‡»ä½ç½®çš„å¡”å¯¹è±¡
     Tower* tower = getTowerAt(row, col);
     if (tower == nullptr)
     {
-        cocos2d::log("Ã»ÓĞËşÔÚ´ËÎ»ÖÃ");
+        cocos2d::log("æ²¡æœ‰å¡”åœ¨æ­¤ä½ç½®");
         return;
     }
 
-    // Ê¹ÓÃ dynamic_cast À´ÅĞ¶ÏËşµÄ¾ßÌåÀàĞÍ
+    // ä½¿ç”¨ dynamic_cast æ¥åˆ¤æ–­å¡”çš„å…·ä½“ç±»å‹
     if (auto bottleTower = dynamic_cast<BottleTower*>(tower))
     {
-        // Èç¹ûÊÇ BottleTower ÀàĞÍµÄËş
-        cocos2d::log("µã»÷ÁË BottleTower!");
-        // ´¦Àí BottleTower µÄÏà¹ØÂß¼­
+        // å¦‚æœæ˜¯ BottleTower ç±»å‹çš„å¡”
+        cocos2d::log("ç‚¹å‡»äº† BottleTower!");
+        // å¤„ç† BottleTower çš„ç›¸å…³é€»è¾‘
     }
     else if (auto shitTower = dynamic_cast<ShitTower*>(tower))
     {
-        // Èç¹ûÊÇ ShitTower ÀàĞÍµÄËş
-        cocos2d::log("µã»÷ÁË ShitTower!");
-        // ´¦Àí ShitTower µÄÏà¹ØÂß¼­
+        // å¦‚æœæ˜¯ ShitTower ç±»å‹çš„å¡”
+        cocos2d::log("ç‚¹å‡»äº† ShitTower!");
+        // å¤„ç† ShitTower çš„ç›¸å…³é€»è¾‘
     }
     else if (auto sunflowerTower = dynamic_cast<SunflowerTower*>(tower))
     {
-        // Èç¹ûÊÇ SunflowerTower ÀàĞÍµÄËş
-        cocos2d::log("µã»÷ÁË SunflowerTower!");
-        // ´¦Àí SunflowerTower µÄÏà¹ØÂß¼­
+        // å¦‚æœæ˜¯ SunflowerTower ç±»å‹çš„å¡”
+        cocos2d::log("ç‚¹å‡»äº† SunflowerTower!");
+        // å¤„ç† SunflowerTower çš„ç›¸å…³é€»è¾‘
     }
     else
     {
-        cocos2d::log("¸ÃËş²»ÊÇÒÑÖªÀàĞÍ!");
+        cocos2d::log("è¯¥å¡”ä¸æ˜¯å·²çŸ¥ç±»å‹!");
     }
 }
 
-ui::Button* currentUpgradeButton = nullptr;  // È«¾Ö±äÁ¿£¬ÓÃÓÚ¼ÇÂ¼µ±Ç°µÄÉı¼¶°´Å¥
-ui::Button* currentDeleteButton = nullptr;  // È«¾Ö±äÁ¿£¬ÓÃÓÚ¼ÇÂ¼µ±Ç°µÄÉ¾³ı°´Å¥
+ui::Button* currentUpgradeButton = nullptr;  // å…¨å±€å˜é‡ï¼Œç”¨äºè®°å½•å½“å‰çš„å‡çº§æŒ‰é’®
+ui::Button* currentDeleteButton = nullptr;  // å…¨å±€å˜é‡ï¼Œç”¨äºè®°å½•å½“å‰çš„åˆ é™¤æŒ‰é’®
 
 void MAP_SCENE::updateordeleteTowerPreview(int row, int col)
 {
-    // Èç¹ûÓĞÆäËû°´Å¥£¬ÏÈÒÆ³ıËüÃÇ
+    // å¦‚æœæœ‰å…¶ä»–æŒ‰é’®ï¼Œå…ˆç§»é™¤å®ƒä»¬
     if (currentUpgradeButton != nullptr)
     {
         currentUpgradeButton->removeFromParent();
@@ -461,22 +461,22 @@ void MAP_SCENE::updateordeleteTowerPreview(int row, int col)
         currentDeleteButton = nullptr;
     }
 
-    // »ñÈ¡µ±Ç°¸ñ×ÓÉÏµÄËş
+    // è·å–å½“å‰æ ¼å­ä¸Šçš„å¡”
     Tower* tower = getTowerAt(row, col);
     if (tower == nullptr)
     {
-        cocos2d::log("¸ÃÎ»ÖÃÃ»ÓĞËş£¬ÎŞ·¨ÏÔÊ¾°´Å¥£¡");
+        cocos2d::log("è¯¥ä½ç½®æ²¡æœ‰å¡”ï¼Œæ— æ³•æ˜¾ç¤ºæŒ‰é’®ï¼");
         return;
     }
 
-    // »ñÈ¡ËşµÄÉı¼¶·ÑÓÃ
+    // è·å–å¡”çš„å‡çº§è´¹ç”¨
     int upgradeCost = tower->getUpgradeCost();
     int sellPrice = tower->getsellPrice();
 
-    // ´´½¨Éı¼¶°´Å¥
+    // åˆ›å»ºå‡çº§æŒ‰é’®
     auto upgradeButton = ui::Button::create("GamePlayScene/CanUpLevel.png");
-    upgradeButton->setPosition(array_to_vec2(row, col) + Vec2(0, 80));  // °´Å¥Î»ÖÃ
-    upgradeButton->setTitleText(std::to_string(upgradeCost));           // ÉèÖÃÏÔÊ¾Éı¼¶·ÑÓÃ
+    upgradeButton->setPosition(array_to_vec2(row, col) + Vec2(0, 80));  // æŒ‰é’®ä½ç½®
+    upgradeButton->setTitleText(std::to_string(upgradeCost));           // è®¾ç½®æ˜¾ç¤ºå‡çº§è´¹ç”¨
     upgradeButton->setTitleColor(Color3B::BLACK);
     upgradeButton->setTitleFontSize(20);
     auto up_label = upgradeButton->getTitleLabel();
@@ -484,39 +484,39 @@ void MAP_SCENE::updateordeleteTowerPreview(int row, int col)
         upgradeButton->getContentSize().height / 2) + Vec2(0, -25));
     if (tower->getLevel() == 3)
     {
-        upgradeButton->loadTextures("GamePlayScene/cant_update.PNG", "GamePlayScene/cant_update.PNG","");  // ÏÔÊ¾¡°ÒÑ´ï×î´ó¼¶±ğ¡±ÌáÊ¾
-        upgradeButton->setTitleText("");  // Çå¿Õ°´Å¥µÄÎÄ×Ö
+        upgradeButton->loadTextures("GamePlayScene/cant_update.PNG", "GamePlayScene/cant_update.PNG","");  // æ˜¾ç¤ºâ€œå·²è¾¾æœ€å¤§çº§åˆ«â€æç¤º
+        upgradeButton->setTitleText("");  // æ¸…ç©ºæŒ‰é’®çš„æ–‡å­—
 
     }
     this->addChild(upgradeButton, 2);
 
-    // ±£´æµ±Ç°Éı¼¶°´Å¥
+    // ä¿å­˜å½“å‰å‡çº§æŒ‰é’®
     currentUpgradeButton = upgradeButton;
 
-    // °´Å¥µã»÷ÊÂ¼ş£ºÖ´ĞĞÉı¼¶²¢ÒÆ³ı°´Å¥
+    // æŒ‰é’®ç‚¹å‡»äº‹ä»¶ï¼šæ‰§è¡Œå‡çº§å¹¶ç§»é™¤æŒ‰é’®
     upgradeButton->addClickEventListener([this, tower, row, col](Ref* sender) {
         upgradeTower(row, col);
 
-        // Éı¼¶ºóÒÆ³ı°´Å¥
+        // å‡çº§åç§»é™¤æŒ‰é’®
         auto button = dynamic_cast<ui::Button*>(sender);
-        // Éı¼¶ºóÒÆ³ıÉ¾³ı°´Å¥
+        // å‡çº§åç§»é™¤åˆ é™¤æŒ‰é’®
         if (currentDeleteButton != nullptr)
         {
             currentDeleteButton->removeFromParent();
-            currentDeleteButton = nullptr;  // Çå¿ÕÈ«¾Ö±äÁ¿
-            cocos2d::log("Éı¼¶ºó£¬É¾³ı°´Å¥ÒÑÒÆ³ı£¡");
+            currentDeleteButton = nullptr;  // æ¸…ç©ºå…¨å±€å˜é‡
+            cocos2d::log("å‡çº§åï¼Œåˆ é™¤æŒ‰é’®å·²ç§»é™¤ï¼");
         }
         if (button != nullptr)
         {
             button->removeFromParent();
-            currentUpgradeButton = nullptr;  // Çå¿ÕÈ«¾Ö±äÁ¿
+            currentUpgradeButton = nullptr;  // æ¸…ç©ºå…¨å±€å˜é‡
         }
         });
 
-    // ´´½¨É¾³ı°´Å¥
-    auto deleteButton = ui::Button::create("GamePlayScene/SellTower.png");  // Ìæ»»ÎªÉ¾³ı°´Å¥µÄÍ¼Æ¬
-    deleteButton->setPosition(array_to_vec2(row, col) + Vec2(0, -80));  // °´Å¥Î»ÖÃ£¬ËşÏÂ·½
-    deleteButton->setTitleText(std::to_string(sellPrice));           // ÉèÖÃÏÔÊ¾Éı¼¶·ÑÓÃ
+    // åˆ›å»ºåˆ é™¤æŒ‰é’®
+    auto deleteButton = ui::Button::create("GamePlayScene/SellTower.png");  // æ›¿æ¢ä¸ºåˆ é™¤æŒ‰é’®çš„å›¾ç‰‡
+    deleteButton->setPosition(array_to_vec2(row, col) + Vec2(0, -80));  // æŒ‰é’®ä½ç½®ï¼Œå¡”ä¸‹æ–¹
+    deleteButton->setTitleText(std::to_string(sellPrice));           // è®¾ç½®æ˜¾ç¤ºå‡çº§è´¹ç”¨
     deleteButton->setTitleColor(Color3B::BLACK);
     deleteButton->setTitleFontSize(20);
     auto sell_label = deleteButton->getTitleLabel();
@@ -524,44 +524,44 @@ void MAP_SCENE::updateordeleteTowerPreview(int row, int col)
         deleteButton->getContentSize().height / 2) + Vec2(0, -25));
     this->addChild(deleteButton, 2);
 
-    // ±£´æµ±Ç°É¾³ı°´Å¥
+    // ä¿å­˜å½“å‰åˆ é™¤æŒ‰é’®
     currentDeleteButton = deleteButton;
 
-    // É¾³ı°´Å¥µã»÷ÊÂ¼ş£ºÉ¾³ıËş
+    // åˆ é™¤æŒ‰é’®ç‚¹å‡»äº‹ä»¶ï¼šåˆ é™¤å¡”
     deleteButton->addClickEventListener([this, tower, row, col](Ref* sender) {
         deleteTower(row, col);
 
-        // ÒÆ³ıÉ¾³ı°´Å¥
+        // ç§»é™¤åˆ é™¤æŒ‰é’®
         auto button = dynamic_cast<ui::Button*>(sender);
         if (button != nullptr)
         {
             button->removeFromParent();
-            currentDeleteButton = nullptr;  // Çå¿ÕÈ«¾Ö±äÁ¿
+            currentDeleteButton = nullptr;  // æ¸…ç©ºå…¨å±€å˜é‡
         }
 
-        // Í¬Ê±ÒÆ³ıÉı¼¶°´Å¥
+        // åŒæ—¶ç§»é™¤å‡çº§æŒ‰é’®
         if (currentUpgradeButton != nullptr)
         {
             currentUpgradeButton->removeFromParent();
             currentUpgradeButton = nullptr;
         }
 
-        cocos2d::log("ËşÔÚÎ»ÖÃ (%d, %d) ÒÑ±»É¾³ı£¡", row, col);
+        cocos2d::log("å¡”åœ¨ä½ç½® (%d, %d) å·²è¢«åˆ é™¤ï¼", row, col);
         });
 
-    // ÔÚ³¡¾°ÖĞÌí¼Óµã»÷ÊÂ¼ş¼àÌıÆ÷
+    // åœ¨åœºæ™¯ä¸­æ·»åŠ ç‚¹å‡»äº‹ä»¶ç›‘å¬å™¨
     auto touchListener = EventListenerTouchOneByOne::create();
     touchListener->onTouchBegan = [this](Touch* touch, Event* event) {
-        // ×ª»»´¥Ãşµãµ½½Úµã¿Õ¼ä
+        // è½¬æ¢è§¦æ‘¸ç‚¹åˆ°èŠ‚ç‚¹ç©ºé—´
         Vec2 location = this->convertToNodeSpace(touch->getLocation());
 
-        // Èç¹ûµã»÷²»ÔÚ°´Å¥·¶Î§ÄÚ£¬ÒÆ³ıËùÓĞ°´Å¥
+        // å¦‚æœç‚¹å‡»ä¸åœ¨æŒ‰é’®èŒƒå›´å†…ï¼Œç§»é™¤æ‰€æœ‰æŒ‰é’®
         if (currentUpgradeButton != nullptr &&
             !currentUpgradeButton->getBoundingBox().containsPoint(location))
         {
             currentUpgradeButton->removeFromParent();
             currentUpgradeButton = nullptr;
-            cocos2d::log("µã»÷ÔÚ°´Å¥Íâ£¬ÒÆ³ıÉı¼¶°´Å¥£¡");
+            cocos2d::log("ç‚¹å‡»åœ¨æŒ‰é’®å¤–ï¼Œç§»é™¤å‡çº§æŒ‰é’®ï¼");
         }
 
         if (currentDeleteButton != nullptr &&
@@ -569,68 +569,68 @@ void MAP_SCENE::updateordeleteTowerPreview(int row, int col)
         {
             currentDeleteButton->removeFromParent();
             currentDeleteButton = nullptr;
-            cocos2d::log("µã»÷ÔÚ°´Å¥Íâ£¬ÒÆ³ıÉ¾³ı°´Å¥£¡");
+            cocos2d::log("ç‚¹å‡»åœ¨æŒ‰é’®å¤–ï¼Œç§»é™¤åˆ é™¤æŒ‰é’®ï¼");
         }
 
-        return false;  // ·µ»Ø false£¬²»×èÖ¹ÊÂ¼ş¼ÌĞø´«µİ
+        return false;  // è¿”å› falseï¼Œä¸é˜»æ­¢äº‹ä»¶ç»§ç»­ä¼ é€’
         };
 
-    // ½«ÊÂ¼ş¼àÌıÆ÷×¢²áµ½³¡¾°
+    // å°†äº‹ä»¶ç›‘å¬å™¨æ³¨å†Œåˆ°åœºæ™¯
     _eventDispatcher->addEventListenerWithSceneGraphPriority(touchListener, this);
 }
 
 
 void MAP_SCENE::deleteTower(int row, int col)
 {
-    // »ñÈ¡Ö¸¶¨Î»ÖÃµÄËş¶ÔÏó
+    // è·å–æŒ‡å®šä½ç½®çš„å¡”å¯¹è±¡
     Tower* tower = getTowerAt(row, col);
 
     if (tower == nullptr)
     {
-        cocos2d::log("¸ÃÎ»ÖÃÃ»ÓĞËş£¬ÎŞ·¨É¾³ı£¡");
+        cocos2d::log("è¯¥ä½ç½®æ²¡æœ‰å¡”ï¼Œæ— æ³•åˆ é™¤ï¼");
         return;
     }
 
-    // ´Ó¸¸½ÚµãÖĞÒÆ³ıËşµÄ¿ÉÊÓ»¯½Úµã£¨Èç¹ûÓĞÏÔÊ¾µÄ Sprite »òÆäËûÄÚÈİ£©
+    // ä»çˆ¶èŠ‚ç‚¹ä¸­ç§»é™¤å¡”çš„å¯è§†åŒ–èŠ‚ç‚¹ï¼ˆå¦‚æœæœ‰æ˜¾ç¤ºçš„ Sprite æˆ–å…¶ä»–å†…å®¹ï¼‰
     if (tower != nullptr)
     {
-        tower->removeFromParent();  // É¾³ıËşµÄ¾«Áé£¨Sprite£©
+        tower->removeFromParent();  // åˆ é™¤å¡”çš„ç²¾çµï¼ˆSpriteï¼‰
     }
 
-    // ´Ó¹ÜÀíÊı×é»òÊı¾İ½á¹¹ÖĞÒÆ³ıËş¶ÔÏóÒıÓÃ
-    towerArray[row][col] = nullptr;  // Çå³ıËşµÄÒıÓÃ
+    // ä»ç®¡ç†æ•°ç»„æˆ–æ•°æ®ç»“æ„ä¸­ç§»é™¤å¡”å¯¹è±¡å¼•ç”¨
+    towerArray[row][col] = nullptr;  // æ¸…é™¤å¡”çš„å¼•ç”¨
     map[row][col] = SPACE;
 
 
-    cocos2d::log("ËşÔÚÎ»ÖÃ (%d, %d) ÒÑ³É¹¦É¾³ı£¡", row, col);
+    cocos2d::log("å¡”åœ¨ä½ç½® (%d, %d) å·²æˆåŠŸåˆ é™¤ï¼", row, col);
 }
 void MAP_SCENE::upgradeTower(int row, int col)
 {
-    // »ñÈ¡µ±Ç°µÄÎ»ÖÃµÄËşÊµÀı
-    Tower* tower = getTowerAt(row, col);  // »ñÈ¡¸ÃÎ»ÖÃµÄËş
+    // è·å–å½“å‰çš„ä½ç½®çš„å¡”å®ä¾‹
+    Tower* tower = getTowerAt(row, col);  // è·å–è¯¥ä½ç½®çš„å¡”
 
     if (tower != nullptr)
     {
-        // Ö´ĞĞÉı¼¶Âß¼­£¬ÕâÀï¼ÙÉèÃ¿¸öËşÀà¶¼ÓĞ`upgrade`º¯Êı
-        tower->upgrade();  // ¼ÙÉèËşÀàÖĞÓĞÉı¼¶·½·¨
+        // æ‰§è¡Œå‡çº§é€»è¾‘ï¼Œè¿™é‡Œå‡è®¾æ¯ä¸ªå¡”ç±»éƒ½æœ‰`upgrade`å‡½æ•°
+        tower->upgrade();  // å‡è®¾å¡”ç±»ä¸­æœ‰å‡çº§æ–¹æ³•
 
-        // Äã¿ÉÒÔ¸ù¾İĞèÒª¸üĞÂËşµÄÊôĞÔ£¬ÀıÈçÔö¼Ó¹¥»÷Á¦£¬¹¥»÷ËÙ¶È£¬ÉúÃüÖµµÈ
-        cocos2d::log("ËşÔÚÎ»ÖÃ (%d, %d) Éı¼¶³É¹¦£¡", row, col);
+        // ä½ å¯ä»¥æ ¹æ®éœ€è¦æ›´æ–°å¡”çš„å±æ€§ï¼Œä¾‹å¦‚å¢åŠ æ”»å‡»åŠ›ï¼Œæ”»å‡»é€Ÿåº¦ï¼Œç”Ÿå‘½å€¼ç­‰
+        cocos2d::log("å¡”åœ¨ä½ç½® (%d, %d) å‡çº§æˆåŠŸï¼", row, col);
     }
     else
     {
-        cocos2d::log("¸ÃÎ»ÖÃÃ»ÓĞËş£¬ÎŞ·¨Éı¼¶£¡");
+        cocos2d::log("è¯¥ä½ç½®æ²¡æœ‰å¡”ï¼Œæ— æ³•å‡çº§ï¼");
     }
 }
 
 Tower* MAP_SCENE::getTowerAt(int row, int col) {
-    // ¼ì²éÊÇ·ñÔ½½ç
+    // æ£€æŸ¥æ˜¯å¦è¶Šç•Œ
     if (row < 0 || row >= 8 || col < 0 || col >= 12) {
-        cocos2d::log("ÎŞĞ§µÄÎ»ÖÃ: (%d, %d)", row, col);
+        cocos2d::log("æ— æ•ˆçš„ä½ç½®: (%d, %d)", row, col);
         return nullptr;
     }
 
-    // Ö±½Ó·µ»ØÊı×éÖĞµÄËş¶ÔÏó
+    // ç›´æ¥è¿”å›æ•°ç»„ä¸­çš„å¡”å¯¹è±¡
     return towerArray[row][col];
 }
 
@@ -638,8 +638,8 @@ void MAP_SCENE::clearWarningSprites()
 {
     for (auto sprite : warningSprites)
     {
-        this->removeChild(sprite);  // ÒÆ³ıÌáÊ¾Í¼»ò°´Å¥
+        this->removeChild(sprite);  // ç§»é™¤æç¤ºå›¾æˆ–æŒ‰é’®
     }
-    warningSprites.clear();  // Çå¿ÕÁĞ±í
+    warningSprites.clear();  // æ¸…ç©ºåˆ—è¡¨
 }
 
