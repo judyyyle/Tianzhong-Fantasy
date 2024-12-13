@@ -18,7 +18,9 @@
 #define BARRIER_2_2 3
 #define BARRIER_4_1 4
 #define BARRIER_4_2 5 
-int map[8][12];               
+
+extern int mapGrid[8][12];  
+
 class MAP_SCENE : public cocos2d::Scene
 {
 public:
