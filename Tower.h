@@ -2,37 +2,79 @@
 #include"cocos2d.h"
 #include "AppDelegate.h"
 #include "HelloWorldScene.h"
+#include "Monster.h"
 #include <string>
+extern std::vector<Monster*> monsters;
 USING_NS_CC;
+class Bullet : public cocos2d::Sprite {
+public:
+    static Bullet* create(const std::string& fileName, cocos2d::Vec2 startPos, cocos2d::Vec2 targetPos, float speed) {
+        Bullet* ret = new Bullet();
+        if (ret && ret->initWithFile(fileName)) {
+            ret->autorelease();
+            ret->startPosition = startPos;
+            ret->targetPosition = targetPos;
+            ret->speed = speed;
+            ret->setPosition(startPos);
+            ret->scheduleUpdate(); // å®šæœŸæ›´æ–°å­å¼¹ä½ç½®
+            return ret;
+        }
+        delete ret;
+        return nullptr;
+    }
+
+    void update(float dt) override {
+        // å­å¼¹ç§»åŠ¨é€»è¾‘
+        cocos2d::Vec2 direction = (targetPosition - startPosition).getNormalized();
+        this->setPosition(this->getPosition() + direction * speed * dt);
+
+        // æ£€æŸ¥æ˜¯å¦åˆ°è¾¾ç›®æ ‡ä½ç½®
+        if (this->getPosition().distance(targetPosition) < 5.0f) {
+            this->removeFromParent(); // ä»çˆ¶èŠ‚ç‚¹ç§»é™¤å­å¼¹
+        }
+    }
+
+
+
+private:
+    cocos2d::Vec2 startPosition;   // èµ·ç‚¹ä½ç½®
+    cocos2d::Vec2 targetPosition;  // ç›®æ ‡ä½ç½®
+    float speed;                   // å­å¼¹é£è¡Œé€Ÿåº¦
+};
+
+
 class Tower :public cocos2d::Sprite
 {
 protected:
-    int Type;//ÖÖÀà
-    int level;//µ±Ç°µÈ¼¶
-    int value;//µ±Ç°¼ÛÖµ
-    int cost;//×Ü»¨·Ñ
-    float attack_power;//µ¥´Î¹¥»÷Á¦
-    float attack_range;//¹¥»÷·¶Î§
+    int Type;//ç§ç±»
+    int level;//å½“å‰ç­‰çº§
+    int value;//å½“å‰ä»·å€¼
+    int cost;//æ€»èŠ±è´¹
+    float attack_power;//å•æ¬¡æ”»å‡»åŠ›
+    float attack_range;//æ”»å‡»èŒƒå›´
     float attack_speed;
-    cocos2d::Sprite* nearestEnemy; // ×î½üµÄµĞÈË
+    cocos2d::Sprite* nearestEnemy; // æœ€è¿‘çš„æ•Œäºº
     cocos2d::Vec2 fireTarget;
     std::string ImageBase;
-    cocos2d::Sprite* weapon;  // ÎäÆ÷
+    cocos2d::Sprite* weapon;  // æ­¦å™¨
 public:
-    // ³õÊ¼»¯·ÀÓùËşµÄÊôĞÔ
+    // åˆå§‹åŒ–é˜²å¾¡å¡”çš„å±æ€§
     Tower(const std::string& fileName) {
         initWithFile(fileName);
     }
     virtual void upgrade() {
-        // Ä¬ÈÏÉı¼¶Âß¼­£¬¿ÉÒÔÎª¿Õ£¬¾ßÌåÂß¼­ÔÚÅÉÉúÀàÖĞ¶¨Òå
+        // é»˜è®¤å‡çº§é€»è¾‘ï¼Œå¯ä»¥ä¸ºç©ºï¼Œå…·ä½“é€»è¾‘åœ¨æ´¾ç”Ÿç±»ä¸­å®šä¹‰
     }
     virtual int getUpgradeCost() const {
-        return value + 50; // ¼ÙÉèÉı¼¶·ÑÓÃÊÇµ±Ç°¼ÛÖµ¼ÓÉÏÒ»¸ö¹Ì¶¨Öµ
+        return value + 50; // å‡è®¾å‡çº§è´¹ç”¨æ˜¯å½“å‰ä»·å€¼åŠ ä¸Šä¸€ä¸ªå›ºå®šå€¼
     }
     virtual int getsellPrice() const {
-        return value + 50; // ¼ÙÉèÉı¼¶·ÑÓÃÊÇµ±Ç°¼ÛÖµ¼ÓÉÏÒ»¸ö¹Ì¶¨Öµ
+        return value + 50; // å‡è®¾å‡çº§è´¹ç”¨æ˜¯å½“å‰ä»·å€¼åŠ ä¸Šä¸€ä¸ªå›ºå®šå€¼
     }
     int getLevel() const { return level; }
+    virtual void update(float dt) {
+    }
+
 };
 
 class BottleTower : public Tower {
@@ -50,49 +92,127 @@ public:
     }
 
     BottleTower(const std::string& fileName) : Tower(fileName) {
-        // ³õÊ¼»¯ÊôĞÔ
+        // åˆå§‹åŒ–å±æ€§
         level = 1;
         ImageBase = "Bottle";
         value = 100;
         Type = 1;
         cost = 100;
         attack_power = 50;
-        attack_speed = 8;
-        attack_range = 192;
+        attack_speed = 2;
+        attack_range = 200;
     }
     int getType() { return Type; }
     virtual bool init() override {
+
+        this->scheduleUpdate();  // å®šæœŸè°ƒç”¨ update å‡½æ•°
         return true;
     }
     void upgrade() {
-        if (level < 3) {  // ¼ÙÉè×î¶àÉı¼¶µ½3¼¶
+        if (level < 3) {  // å‡è®¾æœ€å¤šå‡çº§åˆ°3çº§
             level++;
 
-            // ¸ù¾İµÈ¼¶ÌáÉıÊôĞÔ
-            attack_power *= 1.2f;  // ¹¥»÷Á¦ÌáÉı20%
-            attack_range *= 1.1f;  // ¹¥»÷·¶Î§ÌáÉı10%
-            attack_speed *= 0.9f;  // ¹¥»÷ËÙ¶ÈÌáÉı£¨¼õÉÙ£©
-            value += 80;  // Éı¼¶ËùĞèµÄ¼ÛÖµ£¨¼ÙÉèÃ¿¼¶Ôö¼Ó50£©
+            // æ ¹æ®ç­‰çº§æå‡å±æ€§
+            attack_power *= 1.2f;  // æ”»å‡»åŠ›æå‡20%
+            attack_range *= 1.1f;  // æ”»å‡»èŒƒå›´æå‡10%
+            attack_speed *= 0.9f;  // æ”»å‡»é€Ÿåº¦æå‡ï¼ˆå‡å°‘ï¼‰
+            value += 80;  // å‡çº§æ‰€éœ€çš„ä»·å€¼ï¼ˆå‡è®¾æ¯çº§å¢åŠ 50ï¼‰
             cost += value;
-            // ¸üĞÂÏÔÊ¾
+            // æ›´æ–°æ˜¾ç¤º
             updateAppearance();
         }
     }
 
-    // ¸üĞÂ·ÀÓùËşµÄÍâ¹Û£¨ÀıÈçÍ¼Æ¬±ä»¯£©
+    // æ›´æ–°é˜²å¾¡å¡”çš„å¤–è§‚ï¼ˆä¾‹å¦‚å›¾ç‰‡å˜åŒ–ï¼‰
     void updateAppearance() {
         std::string imagePath = "GamePlayScene/bottle_level_" + std::to_string(level) + ".png";
-        this->setTexture(imagePath);  // ¸ù¾İµÈ¼¶¸üĞÂÍ¼Æ¬
+        this->setTexture(imagePath);  // æ ¹æ®ç­‰çº§æ›´æ–°å›¾ç‰‡
     }
     int getUpgradeCost() const override {
-        return value + 80;  
+        return value + 80;
     }
     int getsellPrice() const override {
-        return cost*0.8;  
+        return cost * 0.8;
+    }
+    void update(float dt) {
+        static float shootCooldown = 0; // ç”¨äºæ§åˆ¶å°„å‡»é—´éš”
+        shootCooldown -= dt; // å‡å°‘å†·å´æ—¶é—´
+
+        findNearestEnemy(monsters); // å¯»æ‰¾æœ€è¿‘çš„æ•Œäºº
+
+        if (nearestEnemy) {
+            rotateTowardsEnemy(); // é¢å‘æœ€è¿‘çš„æ•Œäºº
+            if (shootCooldown <= 0) { // å†·å´æ—¶é—´å·²åˆ°
+                shoot(); // å‘å°„å­å¼¹
+                shootCooldown = attack_speed; // é‡ç½®å†·å´æ—¶é—´
+            }
+        }
+    }
+    void rotateTowardsEnemy() {
+        if (nearestEnemy) {
+            // è·å–é˜²å¾¡å¡”çš„ä½ç½®
+            cocos2d::Vec2 towerPos = this->getPosition();
+            // è·å–æœ€è¿‘æ•Œäººçš„ä½ç½®
+            cocos2d::Vec2 enemyPos = nearestEnemy->getPosition();
+
+            // è®¡ç®—é˜²å¾¡å¡”åˆ°æ•Œäººçš„æ–¹å‘å‘é‡
+            cocos2d::Vec2 direction = enemyPos - towerPos;
+
+            // è®¡ç®—æ–¹å‘å‘é‡çš„è§’åº¦ï¼ˆå•ä½ï¼šå¼§åº¦ï¼‰
+            float angle = direction.getAngle();  // è¿”å›çš„æ˜¯å¼§åº¦ï¼ŒèŒƒå›´æ˜¯[-pi, pi]
+
+            // å°†å¼§åº¦è½¬åŒ–ä¸ºè§’åº¦
+            float angleInDegrees = CC_RADIANS_TO_DEGREES(angle);  // è½¬æ¢ä¸ºåº¦æ•°
+
+            // è®¾ç½®æ—‹è½¬è§’åº¦ï¼Œæ³¨æ„ cocos2d çš„æ—‹è½¬æ˜¯é€†æ—¶é’ˆä¸ºæ­£ï¼Œæ‰€ä»¥è§’åº¦ä¿æŒåŸæ ·å³å¯
+            this->setRotation(-angleInDegrees);  // ä½¿é˜²å¾¡å¡”æ—‹è½¬åˆ°ç›®æ ‡æ–¹å‘
+        }
+    }
+    void findNearestEnemy(const std::vector<Monster*>& enemies) {
+        float minDistance = attack_range; // è®¾ç½®æœ€å¤§èŒƒå›´ä¸ºæ”»å‡»èŒƒå›´
+        cocos2d::Sprite* closestEnemy = nullptr;
+
+        cocos2d::Vec2 towerPos = this->getPosition();
+
+        for (auto enemy : enemies) {
+            // è·å–æ•Œäººä½ç½®
+            cocos2d::Vec2 enemyPos = enemy->getPosition();
+
+            // è®¡ç®—é˜²å¾¡å¡”ä¸æ•Œäººçš„è·ç¦»
+            float distance = towerPos.distance(enemyPos);
+
+            // åˆ¤æ–­æ˜¯å¦åœ¨æ”»å‡»èŒƒå›´å†…ä¸”è·ç¦»æ›´è¿‘
+            if (distance < minDistance) {
+                minDistance = distance;
+                closestEnemy = enemy;
+            }
+        }
+
+        // å¦‚æœæ²¡æœ‰æ‰¾åˆ°æ•Œäººï¼Œæ˜ç¡®å°† nearestEnemy è®¾ç½®ä¸º nullptr
+        if (closestEnemy == nullptr) {
+            nearestEnemy = nullptr;
+        }
+        else {
+            nearestEnemy = closestEnemy;
+        }
+    }
+    void shoot() {
+        if (nearestEnemy) {
+            // è·å–æ•Œäººçš„ä½ç½®
+            cocos2d::Vec2 enemyPos = nearestEnemy->getPosition();
+            // è·å–å¡”çš„ä½ç½®
+            cocos2d::Vec2 towerPos = this->getPosition();
+            // åˆ›å»ºå­å¼¹
+            auto bullet = Bullet::create("/GamePlayScene/bottle_level_1_bullet.png", towerPos, enemyPos, 600.0f); // é€Ÿåº¦å‡è®¾ä¸º 300
+            this->getParent()->addChild(bullet); // å°†å­å¼¹æ·»åŠ åˆ°åœºæ™¯ä¸­
+        }
     }
 
-
 };
+
+
+
+
 
 class ShitTower : public Tower {
 public:
@@ -109,15 +229,15 @@ public:
     }
 
     ShitTower(const std::string& fileName) : Tower(fileName) {
-        // ³õÊ¼»¯ÊôĞÔ
+        // åˆå§‹åŒ–å±æ€§
         level = 1;
         ImageBase = "Shit";
-        value = 100;  // Éè¶¨¼ÛÖµ
-        Type = 2;  // Éè¶¨ÀàĞÍ
+        value = 100;  // è®¾å®šä»·å€¼
+        Type = 2;  // è®¾å®šç±»å‹
         cost = 100;
-        attack_power = 70;  // ¼ÙÉè¹¥»÷Á¦Îª70
-        attack_speed = 6;  // ¼ÙÉè¹¥»÷ËÙ¶ÈÎª6
-        attack_range = 150;  // ¼ÙÉè¹¥»÷·¶Î§Îª150
+        attack_power = 70;  // å‡è®¾æ”»å‡»åŠ›ä¸º70
+        attack_speed = 6;  // å‡è®¾æ”»å‡»é€Ÿåº¦ä¸º6
+        attack_range = 150;  // å‡è®¾æ”»å‡»èŒƒå›´ä¸º150
     }
 
     int getType() { return Type; }
@@ -127,30 +247,30 @@ public:
     }
 
     void upgrade() {
-        if (level < 3) {  // ¼ÙÉè×î¶àÉı¼¶µ½3¼¶
+        if (level < 3) {  // å‡è®¾æœ€å¤šå‡çº§åˆ°3çº§
             level++;
 
-            // ¸ù¾İµÈ¼¶ÌáÉıÊôĞÔ
-            attack_power *= 1.2f;  // ¹¥»÷Á¦ÌáÉı20%
-            attack_range *= 1.1f;  // ¹¥»÷·¶Î§ÌáÉı10%
-            attack_speed *= 0.9f;  // ¹¥»÷ËÙ¶ÈÌáÉı£¨¼õÉÙ£©
-            value += 80;  // Éı¼¶ËùĞèµÄ¼ÛÖµ£¨¼ÙÉèÃ¿¼¶Ôö¼Ó60£©
+            // æ ¹æ®ç­‰çº§æå‡å±æ€§
+            attack_power *= 1.2f;  // æ”»å‡»åŠ›æå‡20%
+            attack_range *= 1.1f;  // æ”»å‡»èŒƒå›´æå‡10%
+            attack_speed *= 0.9f;  // æ”»å‡»é€Ÿåº¦æå‡ï¼ˆå‡å°‘ï¼‰
+            value += 80;  // å‡çº§æ‰€éœ€çš„ä»·å€¼ï¼ˆå‡è®¾æ¯çº§å¢åŠ 60ï¼‰
             cost += value;
-            // ¸üĞÂÏÔÊ¾
+            // æ›´æ–°æ˜¾ç¤º
             updateAppearance();
         }
     }
 
-    // ¸üĞÂ·ÀÓùËşµÄÍâ¹Û£¨ÀıÈçÍ¼Æ¬±ä»¯£©
+    // æ›´æ–°é˜²å¾¡å¡”çš„å¤–è§‚ï¼ˆä¾‹å¦‚å›¾ç‰‡å˜åŒ–ï¼‰
     void updateAppearance() {
         std::string imagePath = "GamePlayScene/shit_level_" + std::to_string(level) + ".png";
-        this->setTexture(imagePath);  // ¸ù¾İµÈ¼¶¸üĞÂÍ¼Æ¬
+        this->setTexture(imagePath);  // æ ¹æ®ç­‰çº§æ›´æ–°å›¾ç‰‡
     }
     int getUpgradeCost() const override {
-        return value + 80;  // ¾ÙÀı£º¼ÙÉè ShitTower µÄÉı¼¶·ÑÓÃÊÇµ±Ç°¼ÛÖµ + 60
+        return value + 80;  // ä¸¾ä¾‹ï¼šå‡è®¾ ShitTower çš„å‡çº§è´¹ç”¨æ˜¯å½“å‰ä»·å€¼ + 60
     }
     int getsellPrice() const override {
-        return cost*0.8;  // ¾ÙÀı£º¼ÙÉè ShitTower µÄÉı¼¶·ÑÓÃÊÇµ±Ç°¼ÛÖµ + 60
+        return cost * 0.8;  // ä¸¾ä¾‹ï¼šå‡è®¾ ShitTower çš„å‡çº§è´¹ç”¨æ˜¯å½“å‰ä»·å€¼ + 60
     }
 
 };
@@ -171,15 +291,15 @@ public:
     }
 
     SunflowerTower(const std::string& fileName) : Tower(fileName) {
-        // ³õÊ¼»¯ÊôĞÔ
+        // åˆå§‹åŒ–å±æ€§
         level = 1;
         ImageBase = "Sunflower";
-        value = 200;  // Éè¶¨¼ÛÖµ
+        value = 200;  // è®¾å®šä»·å€¼
         cost = 200;
-        Type = 3;  // Éè¶¨ÀàĞÍ
-        attack_power = 20;  // ¼ÙÉè¹¥»÷Á¦Îª20
-        attack_speed = 5;  // ¼ÙÉè¹¥»÷ËÙ¶ÈÎª5
-        attack_range = 100;  // ¼ÙÉè¹¥»÷·¶Î§Îª100
+        Type = 3;  // è®¾å®šç±»å‹
+        attack_power = 20;  // å‡è®¾æ”»å‡»åŠ›ä¸º20
+        attack_speed = 5;  // å‡è®¾æ”»å‡»é€Ÿåº¦ä¸º5
+        attack_range = 100;  // å‡è®¾æ”»å‡»èŒƒå›´ä¸º100
     }
 
     int getType() { return Type; }
@@ -189,31 +309,31 @@ public:
     }
 
     void upgrade() {
-        if (level < 3) {  // ¼ÙÉè×î¶àÉı¼¶µ½3¼¶
+        if (level < 3) {  // å‡è®¾æœ€å¤šå‡çº§åˆ°3çº§
             level++;
 
-            // ¸ù¾İµÈ¼¶ÌáÉıÊôĞÔ
-            attack_power *= 1.2f;  // ¹¥»÷Á¦ÌáÉı20%
-            attack_range *= 1.1f;  // ¹¥»÷·¶Î§ÌáÉı10%
-            attack_speed *= 0.9f;  // ¹¥»÷ËÙ¶ÈÌáÉı£¨¼õÉÙ£©
-            value += 100;  
+            // æ ¹æ®ç­‰çº§æå‡å±æ€§
+            attack_power *= 1.2f;  // æ”»å‡»åŠ›æå‡20%
+            attack_range *= 1.1f;  // æ”»å‡»èŒƒå›´æå‡10%
+            attack_speed *= 0.9f;  // æ”»å‡»é€Ÿåº¦æå‡ï¼ˆå‡å°‘ï¼‰
+            value += 100;
             cost += value;
 
-            // ¸üĞÂÏÔÊ¾
+            // æ›´æ–°æ˜¾ç¤º
             updateAppearance();
         }
     }
 
-    // ¸üĞÂ·ÀÓùËşµÄÍâ¹Û£¨ÀıÈçÍ¼Æ¬±ä»¯£©
+    // æ›´æ–°é˜²å¾¡å¡”çš„å¤–è§‚ï¼ˆä¾‹å¦‚å›¾ç‰‡å˜åŒ–ï¼‰
     void updateAppearance() {
         std::string imagePath = "GamePlayScene/sunflower_level_" + std::to_string(level) + ".png";
-        this->setTexture(imagePath);  // ¸ù¾İµÈ¼¶¸üĞÂÍ¼Æ¬
+        this->setTexture(imagePath);  // æ ¹æ®ç­‰çº§æ›´æ–°å›¾ç‰‡
     }
     int getUpgradeCost() const override {
-        return value + 100;  // ¾ÙÀı£º¼ÙÉè ShitTower µÄÉı¼¶·ÑÓÃÊÇµ±Ç°¼ÛÖµ + 60
+        return value + 100;  // ä¸¾ä¾‹ï¼šå‡è®¾ ShitTower çš„å‡çº§è´¹ç”¨æ˜¯å½“å‰ä»·å€¼ + 60
     }
     int getsellPrice() const override {
-        return cost*0.8;  // ¾ÙÀı£º¼ÙÉè ShitTower µÄÉı¼¶·ÑÓÃÊÇµ±Ç°¼ÛÖµ + 60
+        return cost * 0.8;  // ä¸¾ä¾‹ï¼šå‡è®¾ ShitTower çš„å‡çº§è´¹ç”¨æ˜¯å½“å‰ä»·å€¼ + 60
     }
 
 };
