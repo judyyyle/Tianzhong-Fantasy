@@ -1,12 +1,11 @@
-#include "HelloWorldScene.h"
+//#include "HelloWorldScene.h"
 
 #include "MonsterStart.h"
 #include "Monster.h"
 
 #include <string>
 
-
-
+/*
 extern int carrot_HP;//萝卜血量
 
 extern int monster_number;//怪物总数
@@ -16,7 +15,7 @@ extern std::vector<Monster*>monster;
 extern std::vector<Monster*>barrier;
 
 extern Monster* destination;//怪物位置
-
+*/
 
 static struct array {
     int row;
