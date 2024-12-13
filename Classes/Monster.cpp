@@ -1,62 +1,195 @@
 #include "HelloWorldScene.h"
-#include "SimpleAudioEngine.h"
 
 #include "MonsterStart.h"
 #include "Monster.h"
-#include "Tower.h"
 
-#include<string>
-#include <cmath>
-#include <vector>
-#include<algorithm>
+#include <string>
 
-USING_NS_CC;
 
-extern int carrot_HP;//ÂÜ²·ÑªÁ¿
 
-extern int monster_number;//¹ÖÎï×ÜÊı
-extern int monster_wave_number;//¹ÖÎï¹¥»÷²¨Êø
-extern int barrier_number;//ÕÏ°­×ÜÊı
+extern int carrot_HP;//èåœè¡€é‡
+
+extern int monster_number;//æ€ªç‰©æ€»æ•°
+extern int monster_wave_number;//æ€ªç‰©æ”»å‡»æ³¢æŸ
+extern int barrier_number;//éšœç¢æ€»æ•°
 extern std::vector<Monster*>monster;
 extern std::vector<Monster*>barrier;
 
-extern Monster* destination;//¹ÖÎïÎ»ÖÃ
+extern Monster* destination;//æ€ªç‰©ä½ç½®
+
+
+static struct array {
+    int row;
+    int col;
+};
+
+static Vec2 array_to_vec2(int row, int col) { //è¿”å›Vec2ç±»å‹ï¼Œå³ä¸–ç•Œåæ ‡
+    Vec2 vec;
+    vec.x = 64 + 128 * col;
+    vec.y = 1024 - 64 - 128 * row;
+    return vec;
+}
 
 Scene* HelloWorld::createScene()
 {
     return HelloWorld::create();
 }
 
-Sprite* Monster::createSprite() {
-	return Monster::create();
-}
-
-//²»Í¬¹ÖÎï¡¢ÕÏ°­µÄĞÅÏ¢³õÊ¼»¯
-void Monster::initType(int stage) {
-	monster.type = stage;
-	std::string picture1[] = { "normal01-2.PNG","fast01-2.PNG","huge01-2.PNG","One1.PNG","One2.PNG","Two1.PNG","Two2.PNG","Four1.PNG","Four2.PNG" };
-	std::string picture2[] = { "normal01-1.PNG","fast01-1.PNG","huge01-1.PNG" };
-
-
-	Vector<SpriteFrame*> monster;
-
-	switch (stage) {
-	case 0: //Õı³£¹ÖÎï
-		monster.pushBack(SpriteFrame::create(picture1[0], Rect(0, 0, 68, 87)));
-		monster.pushBack(SpriteFrame::create(picture2[0], Rect(0, 0, 75, 74)));
-		// ÓÃthisÖ¸ÕëÖ¸¶¨¸³Öµ³ÉÔ±±äÁ¿
-		this->monster.full_HP = MONSTER_NORMAL_HP;
-		this->monster.HP = MONSTER_NORMAL_HP;
-		this->monster.ATK = 1;
-		this->monster.Speed = MONSTER_NORMAL_SPEED;
-		this->monster.Coin = MONSTER_COIN_NORMAL;
-
-		break;
+bool Monster::init()
+{
+	if (!Sprite::init()) {
+		return false;
 	}
+    CCLOG("Monster initialized successfully!");
+	this->scheduleUpdate();
+
+	return true;
 }
 
+void Monster::initType(int monster_type,int map_type) {
+    path_count = 0;
+    switch (map_type) {
+    case ADVENTURE1:
+        path = new MapPath[8];
+        path_total = 8;
+        path[0] = { array_to_vec2(2,1),0,-1,DOWN }; 
+        path[1] = { array_to_vec2(5,1),1,0,RIGHT };
+        path[2] = { array_to_vec2(5,4),0,1,UP };
+        path[3] = { array_to_vec2(4,4),1,0,RIGHT };
+        path[4] = { array_to_vec2(4,7),0,-1,DOWN };
+        path[5] = { array_to_vec2(5,7),1,0,RIGHT };
+        path[6] = { array_to_vec2(5,10),0,1,UP };
+        path[7] = { array_to_vec2(2,10),-2,-2,STOP };
+        break;
+    case ADVENTURE2:
+        path = new MapPath[8];
+        path_total = 8;
+        path[0] = { array_to_vec2(3,0),1,0,RIGHT };
+        path[1] = { array_to_vec2(3,5),0,1,UP };
+        path[2] = { array_to_vec2(2,5),1,0,RIGHT };
+        path[3] = { array_to_vec2(2,9),0,-1,DOWN };
+        path[4] = { array_to_vec2(5,9),-1,0,LEFT };
+        path[5] = { array_to_vec2(5,1),0,-1,DOWN };
+        path[6] = { array_to_vec2(7,1),1,0,RIGHT };
+        path[7] = { array_to_vec2(7,9),-2,-2,STOP };
+        break;
+    case BOSS1:
+        path = new MapPath[12];
+        path_total = 12;
+        path[0] = { array_to_vec2(3,5),1,0,RIGHT };
+        path[1] = { array_to_vec2(3,7),0,1,UP };
+        path[2] = { array_to_vec2(2,7),1,0,RIGHT };
+        path[3] = { array_to_vec2(2,10),0,-1,DOWN };
+        path[4] = { array_to_vec2(5,10),-1,0,LEFT };
+        path[5] = { array_to_vec2(5,7),0,-1,DOWN };
+        path[6] = { array_to_vec2(6,7),-1,0,LEFT };
+        path[7] = { array_to_vec2(6,5),0,-1,DOWN };
+        path[8] = { array_to_vec2(7,5),-1,0,LEFT };
+        path[9] = { array_to_vec2(7,2),0,1,UP };
+        path[10] = { array_to_vec2(4,2),1,0,RIGHT };
+        path[11] = { array_to_vec2(4,5),0,1,UP };
+    }
 
+    MonsterType types[MONSTER_TOTAL];
+    types[NORMAL] = { 100,100,100 };
+    types[FAST] = { 80,80,150 };
+    types[HUGE] = { 120,120,80 };
+    types[BOSS] = { 1000,1000,50 };
 
+    std::string picture_1[MONSTER_TOTAL] = { "/Monster/Normal_1.png","/Monster/Huge_1.png","/Monster/Fast_1.png" ,"/Monster/Boss_1.png" };
+    std::string picture_2[MONSTER_TOTAL] = { "/Monster/Normal_2.png","/Monster/Huge_2.png","/Monster/Fast_2.png","/Monster/Boss_1.png" };
+    Vector<SpriteFrame*> animFrames;
+    animFrames.reserve(2);
+    animFrames.pushBack(SpriteFrame::create(picture_1[monster_type], Rect(0, 0, 128, 128)));
+    animFrames.pushBack(SpriteFrame::create(picture_2[monster_type], Rect(0, 0, 128, 128)));
 
+    Animation* animation;
+    animation = Animation::createWithSpriteFrames(animFrames, 0.1f);
 
+    Animate* animate;
+    animate = Animate::create(animation);
 
+    this->monster_type.hp = types[monster_type].hp;
+    this->monster_type.max_hp = types[monster_type].max_hp;
+    this->monster_type.speed = types[monster_type].speed;
+    
+    this->setTexture(picture_1[monster_type]);
+
+    if (monster_type == FAST)
+        this->setAnchorPoint(Vec2(0.5, 0.3));
+    else
+        this->setAnchorPoint(Vec2(0.4, 0.3));
+
+    this->setPosition(path[path_count].point);
+    this->runAction(RepeatForever::create(animate)->clone());
+
+    hp_border= Sprite::create("/Monster/Hp/HpBorder.png");
+    hp = Sprite::create("/Monster/Hp/Hp.png");
+
+    if (monster_type == FAST) {
+        hp_border->setPosition(65, 130);
+        hp->setPosition(65, 130);
+    }
+    else {
+        hp_border->setPosition(55, 130);
+        hp->setPosition(55, 130);
+    }
+    
+    this->addChild(hp_border,100);
+    this->addChild(hp,100);
+    /*
+    auto hp_border = Sprite::create("/Monster/Hp/HpBorder.png");
+    auto hp = Sprite::create("/Monster/Hp/Hp.png");
+    hp->setAnchorPoint(Vec2(-0.5, -13));
+    hp_border->setAnchorPoint(Vec2(-0.5, -13));
+    this->addChild(hp_border);
+    this->addChild(hp);
+    */
+    CCLOG("Initializing monster with type: %d, map_type: %d", monster_type, map_type);
+    // å…¶ä»–åˆå§‹åŒ–ä»£ç 
+    
+}
+
+void Monster::update(float dt) {
+    
+    // åœ¨ update å‡½æ•°ä¸­æ›´æ–°ç²¾çµä½ç½®
+    float now_x = this->getPositionX() + path[path_count].x * dt * this->monster_type.speed;
+    float now_y = this->getPositionY() + path[path_count].y * dt * this->monster_type.speed;
+    
+    switch (path[path_count].direction) {
+    case UP:
+        if (now_y < path[path_count+1].point.y)
+            this->setPosition(now_x, now_y);
+        else
+            path_count++;
+        break;
+    case DOWN:
+        if (now_y > path[path_count+1].point.y)
+            this->setPosition(now_x, now_y);
+        else
+            path_count++;
+        break;
+    case LEFT:
+        if (now_x > path[path_count+1].point.x)
+            this->setPosition(now_x, now_y);
+        else
+            path_count++;
+        break;
+    case RIGHT:
+        if (now_x < path[path_count + 1].point.x)
+            this->setPosition(now_x, now_y);
+            
+        else
+            path_count++;
+        break;
+    case STOP:
+        return;
+    }
+    
+    if (this->monster_type.hp > 0 && this->monster_type.hp < this->monster_type.max_hp) {
+        Size hpSize = hp->getContentSize();
+        float width = hpSize.width;
+        width *= this->monster_type.hp / this->monster_type.max_hp;
+        hp->setContentSize(Size(width, hpSize.height));
+    }
+}
