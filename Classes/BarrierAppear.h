@@ -11,32 +11,32 @@ class BarrierInfo : public Node {
 public:
     CREATE_FUNC(BarrierInfo);
 
-    Sprite* barrierSprite = nullptr;  // ÕÏ°­Îï
-    Sprite* hpHolder = nullptr;      // ÑªÌõ±³¾°
-    Sprite* hpSlider = nullptr;      // ÑªÌõ»¬¿é
-    Sprite* arrow = nullptr;         // ÑªÌõ»¬¿é
-    int hp = 0;                      // µ±Ç°ÑªÁ¿
-    int maxHp = 0;                   // ×î´óÑªÁ¿
-
-    // ³õÊ¼»¯ÕÏ°­Îï
-    bool initWithParams(const std::string& spritePath, const Vec2& position, int initialHp) {
-        // ´´½¨ÕÏ°­Îï
+    Sprite* barrierSprite = nullptr;  // éšœç¢ç‰©
+    Sprite* hpHolder = nullptr;      // è¡€æ¡èƒŒæ™¯
+    Sprite* hpSlider = nullptr;      // è¡€æ¡æ»‘å—
+    Sprite* arrow = nullptr;         // è¡€æ¡æ»‘å—
+    int hp = 0;                      // å½“å‰è¡€é‡
+    int maxHp = 0;                   // æœ€å¤§è¡€é‡
+    int Type=-1;
+    // åˆå§‹åŒ–éšœç¢ç‰©
+    bool initWithParams(const std::string& spritePath, const Vec2& position, int initialHp,int type) {
+        // åˆ›å»ºéšœç¢ç‰©
         barrierSprite = Sprite::create(spritePath);
         if (!barrierSprite) return false;
         barrierSprite->setPosition(position);
         this->addChild(barrierSprite);
 
-        // ³õÊ¼»¯ÑªÁ¿
+        // åˆå§‹åŒ–è¡€é‡
         maxHp = initialHp*8;
         hp = initialHp*8;
-
-        // ´´½¨ÑªÌõ±³¾°
+        Type=type;
+        // åˆ›å»ºè¡€æ¡èƒŒæ™¯
         hpHolder = Sprite::create("/Barrier/HpHolder.png");
         hpHolder->setPosition(Vec2(position.x, position.y + barrierSprite->getContentSize().height / 2.25));
         hpHolder->setVisible(false);  
         this->addChild(hpHolder);
 
-        // ´´½¨ÑªÌõ»¬¿é
+        // åˆ›å»ºè¡€æ¡æ»‘å—
         hpSlider = Sprite::create("/Barrier/HpSlider.png");
         hpSlider->setAnchorPoint(Vec2(0, 0.5));
         hpSlider->setPosition(Vec2(hpHolder->getPositionX() - hpHolder->getContentSize().width / 2,
@@ -44,7 +44,7 @@ public:
         hpSlider->setVisible(false);  
         this->addChild(hpSlider);
 
-        // ³õÊ¼»¯ÏÔÊ¾¼ıÍ·
+        // åˆå§‹åŒ–æ˜¾ç¤ºç®­å¤´
         arrow = Sprite::create("/Barrier/arrow.png");
         arrow->setPosition(Vec2(barrierSprite->getPositionX(), hpHolder->getPositionY() + 19));
         arrow->setVisible(false);
@@ -53,33 +53,33 @@ public:
         return true;
     }
 
-    // ÏÔÊ¾ÑªÌõ
+    // æ˜¾ç¤ºè¡€æ¡
     void showHpBar() {
         hpHolder->setVisible(true);
         hpSlider->setVisible(true);
         arrow->setVisible(true);
     }
 
-    // Òş²ØÑªÌõ
+    // éšè—è¡€æ¡
     void hideHpBar() {
         hpHolder->setVisible(false);
         hpSlider->setVisible(false);
         arrow->setVisible(false);
     }
 
-    // ¸üĞÂÑªÁ¿
+    // æ›´æ–°è¡€é‡
     void takeDamage(int damage) {
         hp = std::max(hp - damage, 0);
         float hpRatio = static_cast<float>(hp) / maxHp;
         hpSlider->setScaleX(hpRatio);
     }
 
-    // ¼ì²éÊÇ·ñËÀÍö
+    // æ£€æŸ¥æ˜¯å¦æ­»äº¡
     bool isDead() const {
         return hp <= 0;
     }
 
-    // ÒÆ³ıÕÏ°­Îï¼°ÑªÌõ
+    // ç§»é™¤éšœç¢ç‰©åŠè¡€æ¡
     void removeFromScene() {
         if (barrierSprite) barrierSprite->removeFromParent();
         if (hpHolder) hpHolder->removeFromParent();
@@ -93,27 +93,27 @@ class BarrierManager : public Node {
 public:
     CREATE_FUNC(BarrierManager);
 
-    Vector<BarrierInfo*> barriers;      // ´æ´¢ËùÓĞÕÏ°­Îï
-    BarrierInfo* selectedBarrier = nullptr;  // µ±Ç°Ñ¡ÖĞµÄÕÏ°­Îï
+    Vector<BarrierInfo*> barriers;      // å­˜å‚¨æ‰€æœ‰éšœç¢ç‰©
+    BarrierInfo* selectedBarrier = nullptr;  // å½“å‰é€‰ä¸­çš„éšœç¢ç‰©
 
-    // ³õÊ¼»¯ÕÏ°­Îï
+    // åˆå§‹åŒ–éšœç¢ç‰©
     void BarrierAppear(int type, float positionX, float positionY, int initialHp) {
-        // ÕÏ°­ÎïµÄÍ¼Æ¬Â·¾¶
+        // éšœç¢ç‰©çš„å›¾ç‰‡è·¯å¾„
         std::string picture[] = {
             "/Barrier/one1.png", "/Barrier/one2.png",
             "/Barrier/two1.png", "/Barrier/two2.png",
             "/Barrier/four1.png", "/Barrier/four2.png"
         };
 
-        // ´´½¨ BarrierInfo ÊµÀı
+        // åˆ›å»º BarrierInfo å®ä¾‹
         auto barrierInfo = BarrierInfo::create();
-        if (barrierInfo && barrierInfo->initWithParams(picture[type], Vec2(positionX, positionY), initialHp)) {
+        if (barrierInfo && barrierInfo->initWithParams(picture[type], Vec2(positionX, positionY), initialHp,type)) {
             this->addChild(barrierInfo);
             barriers.pushBack(barrierInfo);
         }
     }
 
-    // Êó±êµã»÷ÊÂ¼ş¼àÌıÆ÷
+    // é¼ æ ‡ç‚¹å‡»äº‹ä»¶ç›‘å¬å™¨
     void createMouseEventListener() {
         auto listener = EventListenerMouse::create();
 
@@ -122,25 +122,25 @@ public:
             Vec2 clickPosition = mouseEvent->getLocationInView();
             clickPosition = this->convertToNodeSpace(clickPosition);
 
-            // ÅĞ¶ÏÊÇ·ñµã»÷ÕÏ°­Îï
+            // åˆ¤æ–­æ˜¯å¦ç‚¹å‡»éšœç¢ç‰©
             BarrierInfo* clickedBarrier = getClickedBarrier(clickPosition);
             if (clickedBarrier) {
-                // Èç¹ûµã»÷ÁËÕÏ°­Îï£¬ÏÔÊ¾ÆäÑªÌõ²¢Ê¹Æä³ÉÎªÑ¡ÖĞÕÏ°­Îï
-                deselectBarrier();  // È¡ÏûÖ®Ç°µÄÑ¡ÖĞ×´Ì¬
+                // å¦‚æœç‚¹å‡»äº†éšœç¢ç‰©ï¼Œæ˜¾ç¤ºå…¶è¡€æ¡å¹¶ä½¿å…¶æˆä¸ºé€‰ä¸­éšœç¢ç‰©
+                deselectBarrier();  // å–æ¶ˆä¹‹å‰çš„é€‰ä¸­çŠ¶æ€
                 selectedBarrier = clickedBarrier;
                 selectedBarrier->showHpBar();
 
 
-                selectedBarrier->takeDamage(1);  // Ê¾Àı£ºµã»÷ºó¼õÉÙ 1 µãÑªÁ¿
+                selectedBarrier->takeDamage(1);  // ç¤ºä¾‹ï¼šç‚¹å‡»åå‡å°‘ 1 ç‚¹è¡€é‡
 
-                // Èç¹ûÕÏ°­ÎïÑªÁ¿Îª 0£¬ÒÆ³ıÕÏ°­Îï
+                // å¦‚æœéšœç¢ç‰©è¡€é‡ä¸º 0ï¼Œç§»é™¤éšœç¢ç‰©
                 if (selectedBarrier->isDead()) {
                     removeBarrier(selectedBarrier);
                     selectedBarrier = nullptr;
                 }
             }
             else {
-                // µã»÷¿Õ°×ÇøÓòÒş²ØÑªÌõ
+                // ç‚¹å‡»ç©ºç™½åŒºåŸŸéšè—è¡€æ¡
                 deselectBarrier();
             }
             };
@@ -148,7 +148,7 @@ public:
         _eventDispatcher->addEventListenerWithSceneGraphPriority(listener, this);
     }
 
-    // ¸ù¾İµã»÷Î»ÖÃ»ñÈ¡ÕÏ°­Îï
+    // æ ¹æ®ç‚¹å‡»ä½ç½®è·å–éšœç¢ç‰©
     BarrierInfo* getClickedBarrier(const Vec2& position) {
         for (auto& info : barriers) {
             if (info->barrierSprite && info->barrierSprite->getBoundingBox().containsPoint(position)) {
@@ -158,13 +158,13 @@ public:
         return nullptr;
     }
 
-    // ÒÆ³ıÕÏ°­Îï
+    // ç§»é™¤éšœç¢ç‰©
     void removeBarrier(BarrierInfo* barrierInfo) {
         barriers.eraseObject(barrierInfo);
         barrierInfo->removeFromScene();
     }
 
-    // È¡ÏûÑ¡ÖĞÕÏ°­Îï
+    // å–æ¶ˆé€‰ä¸­éšœç¢ç‰©
     void deselectBarrier() {
         if (selectedBarrier) {
             selectedBarrier->hideHpBar();
