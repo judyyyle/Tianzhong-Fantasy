@@ -13,7 +13,7 @@ USING_NS_CC;
 
 using namespace cocos2d::ui;
 // 在 MAP_SCENE 类中，添加一个成员变量来保存提示图标
-
+int mapGrid[8][12];
 int Level = 1;
 /**********************  全局变量  ***********************/
 //关卡选项
@@ -212,7 +212,7 @@ MAP_SCENE::MAP_SCENE()
     : background(nullptr)
 {
     // 初始化地图状态数组
-    memset(map, SPACE, sizeof(map)); // 默认所有位置为空白
+    memset(mapGrid, SPACE, sizeof(mapGrid)); // 默认所有位置为空白
 }
 
 MAP_SCENE::~MAP_SCENE()
@@ -322,7 +322,7 @@ bool MAP_SCENE::init()
 // 处理实时反馈的函数
 void MAP_SCENE::showBuildFeedback(int row, int col)
 {
-    if (map[row][col] == PATH) {
+    if (mapGrid[row][col] == PATH) {
         // 如果不能放塔，则显示提示（例如提示框或图标）
         auto feedback = Sprite::create("GamePlayScene/cantBuild.png");
         if (feedback != nullptr) {
@@ -338,7 +338,7 @@ void MAP_SCENE::showBuildFeedback(int row, int col)
             feedback->runAction(Sequence::create(delay, remove, nullptr));
         }
     }
-    else if (map[row][col] == SPACE) {
+    else if (mapGrid[row][col] == SPACE) {
         // 如果可以放塔，可能需要显示一个不同的反馈，或者清除之前的反馈
         auto feedback = Sprite::create("GamePlayScene/Grid.png");
         if (feedback != nullptr) {
@@ -348,12 +348,12 @@ void MAP_SCENE::showBuildFeedback(int row, int col)
             warningSprites.push_back(feedback);
         }
     }
-    else if (map[row][col] == EXISTED_TOWER) {
+    else if (mapGrid[row][col] == EXISTED_TOWER) {
         handleTowerClick(row, col);
         updateordeleteTowerPreview(row, col);
     }
     
-    else if (map[row][col] == BARRIER) {
+    else if (mapGrid[row][col] == BARRIER) {
         Vec2 clickPosition = array_to_vec2(row, col);
 
         // 假设 BarrierManager 已经被初始化并作为类成员变量
@@ -385,19 +385,19 @@ void MAP_SCENE::handleMapAction(int row, int col)
     clearWarningSprites();
 
     // 根据点击的位置处理逻辑
-    if (map[row][col] == BARRIER)
+    if (mapGrid[row][col] == BARRIER)
     {
         cocos2d::log("无法放置塔，位置被障碍物占用！");
     }
-    else if (map[row][col] == EXISTED_TOWER)
+    else if (mapGrid[row][col] == EXISTED_TOWER)
     {
         cocos2d::log("该位置已有塔！");
     }
-    else if (map[row][col] == PATH)
+    else if (mapGrid[row][col] == PATH)
     {
         cocos2d::log("该位置为路径，不能放置塔！");
     }
-    else if (map[row][col] == SPACE)
+    else if (mapGrid[row][col] == SPACE)
     {
         //map[row][col] = EXISTED_TOWER;
         cocos2d::log("放置了防御塔！");
@@ -533,7 +533,7 @@ void MAP_SCENE::onTowerPreviewClicked(int towerIndex, int row, int col)
     towerArray[row][col] = tower;
 
     // 更新地图数据
-    map[row][col] = EXISTED_TOWER;  // 设置该位置已放置塔
+    mapGrid[row][col] = EXISTED_TOWER;  // 设置该位置已放置塔
 
     // 更新状态
     isTowerSelected = true;  // 设置防御塔已选择
@@ -707,7 +707,7 @@ void MAP_SCENE::deleteTower(int row, int col)
 
     // 从管理数组或数据结构中移除塔对象引用
     towerArray[row][col] = nullptr;  // 清除塔的引用
-    map[row][col] = SPACE;
+    mapGrid[row][col] = SPACE;
 
 
     cocos2d::log("塔在位置 (%d, %d) 已成功删除！", row, col);
@@ -828,48 +828,48 @@ void MAP_SCENE::initializeMapArray(int level) {
        this->addChild(barrierManager);
         //barrierManager->createMouseEventListener();
         //map1
-        map[2][1] = PATH;   // (2, 3) 是路径
-        map[3][1] = PATH;
-        map[4][1] = PATH;
-        map[5][1] = PATH;
-        map[5][2] = PATH;
-        map[5][3] = PATH;
-        map[5][4] = PATH;
-        map[4][4] = PATH;
-        map[4][5] = PATH;
-        map[4][6] = PATH;
-        map[4][7] = PATH;
-        map[5][7] = PATH;
-        map[5][8] = PATH;
-        map[5][9] = PATH;
-        map[5][10] = PATH;
-        map[4][10] = PATH;
-        map[3][10] = PATH;
-        map[2][10] = PATH;
-        map[vec2_to_array(Vec2(320, 448)).row][vec2_to_array(Vec2(320, 448)).col] = BARRIER;
-        map[vec2_to_array(Vec2(1216, 448)).row][vec2_to_array(Vec2(1216, 448)).col] = BARRIER;
-        map[vec2_to_array(Vec2(576, 576)).row][vec2_to_array(Vec2(576, 576)).col] = BARRIER;
-        map[vec2_to_array(Vec2(960, 576)).row][vec2_to_array(Vec2(960, 576)).col] = BARRIER;
+        mapGrid[2][1] = PATH;   // (2, 3) 是路径
+        mapGrid[3][1] = PATH;
+        mapGrid[4][1] = PATH;
+        mapGrid[5][1] = PATH;
+        mapGrid[5][2] = PATH;
+        mapGrid[5][3] = PATH;
+        mapGrid[5][4] = PATH;
+        mapGrid[4][4] = PATH;
+        mapGrid[4][5] = PATH;
+        mapGrid[4][6] = PATH;
+        mapGrid[4][7] = PATH;
+        mapGrid[5][7] = PATH;
+        mapGrid[5][8] = PATH;
+        mapGrid[5][9] = PATH;
+        mapGrid[5][10] = PATH;
+        mapGrid[4][10] = PATH;
+        mapGrid[3][10] = PATH;
+        mapGrid[2][10] = PATH;
+        mapGrid[vec2_to_array(Vec2(320, 448)).row][vec2_to_array(Vec2(320, 448)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(1216, 448)).row][vec2_to_array(Vec2(1216, 448)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(576, 576)).row][vec2_to_array(Vec2(576, 576)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(960, 576)).row][vec2_to_array(Vec2(960, 576)).col] = BARRIER;
 
-        map[vec2_to_array(Vec2(768-64, 320)).row][vec2_to_array(Vec2(768-64, 320)).col] = BARRIER;//2
-        map[vec2_to_array(Vec2(768 + 64, 320)).row][vec2_to_array(Vec2(768 + 64, 320)).col] = BARRIER;//2
+        mapGrid[vec2_to_array(Vec2(768-64, 320)).row][vec2_to_array(Vec2(768-64, 320)).col] = BARRIER;//2
+        mapGrid[vec2_to_array(Vec2(768 + 64, 320)).row][vec2_to_array(Vec2(768 + 64, 320)).col] = BARRIER;//2
 
-        map[vec2_to_array(Vec2(768-64, 768-64)).row][vec2_to_array(Vec2(768-64, 768-64)).col] = BARRIER;//4
-        map[vec2_to_array(Vec2(768 - 64, 768 + 64)).row][vec2_to_array(Vec2(768 - 64, 768 + 64)).col] = BARRIER;//4
-        map[vec2_to_array(Vec2(768 + 64, 768 - 64)).row][vec2_to_array(Vec2(768 + 64, 768 - 64)).col] = BARRIER;//4
-        map[vec2_to_array(Vec2(768 + 64, 768 + 64)).row][vec2_to_array(Vec2(768 + 64, 768 + 64)).col] = BARRIER;//4
+        mapGrid[vec2_to_array(Vec2(768-64, 768-64)).row][vec2_to_array(Vec2(768-64, 768-64)).col] = BARRIER;//4
+        mapGrid[vec2_to_array(Vec2(768 - 64, 768 + 64)).row][vec2_to_array(Vec2(768 - 64, 768 + 64)).col] = BARRIER;//4
+        mapGrid[vec2_to_array(Vec2(768 + 64, 768 - 64)).row][vec2_to_array(Vec2(768 + 64, 768 - 64)).col] = BARRIER;//4
+        mapGrid[vec2_to_array(Vec2(768 + 64, 768 + 64)).row][vec2_to_array(Vec2(768 + 64, 768 + 64)).col] = BARRIER;//4
 
-        map[vec2_to_array(Vec2(512-64, 768-64)).row][vec2_to_array(Vec2(512-64, 768-64)).col] = BARRIER;//4
-        map[vec2_to_array(Vec2(512+64, 768-64)).row][vec2_to_array(Vec2(512+64, 768-64)).col] = BARRIER;//4
-        map[vec2_to_array(Vec2(512 - 64, 768 + 64)).row][vec2_to_array(Vec2(512 - 64, 768 + 64)).col] = BARRIER;//4
-        map[vec2_to_array(Vec2(512 + 64, 768 + 64)).row][vec2_to_array(Vec2(512 + 64, 768 + 64)).col] = BARRIER;//4
+        mapGrid[vec2_to_array(Vec2(512-64, 768-64)).row][vec2_to_array(Vec2(512-64, 768-64)).col] = BARRIER;//4
+        mapGrid[vec2_to_array(Vec2(512+64, 768-64)).row][vec2_to_array(Vec2(512+64, 768-64)).col] = BARRIER;//4
+        mapGrid[vec2_to_array(Vec2(512 - 64, 768 + 64)).row][vec2_to_array(Vec2(512 - 64, 768 + 64)).col] = BARRIER;//4
+        mapGrid[vec2_to_array(Vec2(512 + 64, 768 + 64)).row][vec2_to_array(Vec2(512 + 64, 768 + 64)).col] = BARRIER;//4
 
 
 
-        map[vec2_to_array(Vec2(1024-64, 768-64)).row][vec2_to_array(Vec2(1024-64, 768-64)).col] = BARRIER;//4
-        map[vec2_to_array(Vec2(1024 - 64, 768 + 64)).row][vec2_to_array(Vec2(1024 - 64, 768 + 64)).col] = BARRIER;//4
-        map[vec2_to_array(Vec2(1024 + 64, 768 - 64)).row][vec2_to_array(Vec2(1024 + 64, 768 - 64)).col] = BARRIER;//4
-        map[vec2_to_array(Vec2(1024 + 64, 768 + 64)).row][vec2_to_array(Vec2(1024 + 64, 768 + 64)).col] = BARRIER;//4
+        mapGrid[vec2_to_array(Vec2(1024-64, 768-64)).row][vec2_to_array(Vec2(1024-64, 768-64)).col] = BARRIER;//4
+        mapGrid[vec2_to_array(Vec2(1024 - 64, 768 + 64)).row][vec2_to_array(Vec2(1024 - 64, 768 + 64)).col] = BARRIER;//4
+        mapGrid[vec2_to_array(Vec2(1024 + 64, 768 - 64)).row][vec2_to_array(Vec2(1024 + 64, 768 - 64)).col] = BARRIER;//4
+        mapGrid[vec2_to_array(Vec2(1024 + 64, 768 + 64)).row][vec2_to_array(Vec2(1024 + 64, 768 + 64)).col] = BARRIER;//4
 
         break;
     case 1:
@@ -891,64 +891,64 @@ void MAP_SCENE::initializeMapArray(int level) {
        this->addChild(barrierManager);
         //barrierManager->createMouseEventListener();
 
-        map[3][1] = PATH;
-        map[3][2] = PATH;
-        map[3][3] = PATH;
-        map[3][4] = PATH;
-        map[3][5] = PATH;
-        map[2][6] = PATH;
-        map[2][7] = PATH;
-        map[2][8] = PATH;
-        map[2][9] = PATH;
-        map[3][9] = PATH;
-        map[4][9] = PATH;
-        map[5][9] = PATH;
-        map[5][8] = PATH;
-        map[5][7] = PATH;
-        map[5][6] = PATH;
-        map[5][5] = PATH;
-        map[5][4] = PATH;
-        map[5][3] = PATH;
-        map[5][2] = PATH;
-        map[6][2] = PATH;
-        map[7][2] = PATH;
-        map[7][3] = PATH;
-        map[7][4] = PATH;
-        map[7][5] = PATH;
-        map[7][6] = PATH;
-        map[7][7] = PATH;
-        map[7][8] = PATH;
-        map[7][9] = PATH;
-        map[7][10] = PATH;
-        map[7][11] = PATH;
-        map[vec2_to_array(Vec2(836, 832)).row][vec2_to_array(Vec2(836, 832)).col] = BARRIER;
-        map[vec2_to_array(Vec2(836, 192)).row][vec2_to_array(Vec2(836, 192)).col] = BARRIER;
-        map[vec2_to_array(Vec2(964, 192)).row][vec2_to_array(Vec2(964, 192)).col] = BARRIER;
-        map[vec2_to_array(Vec2(320, 448)).row][vec2_to_array(Vec2(320, 448)).col] = BARRIER;
-        map[vec2_to_array(Vec2(448, 448)).row][vec2_to_array(Vec2(448, 448)).col] = BARRIER;
-        map[vec2_to_array(Vec2(1216, 192)).row][vec2_to_array(Vec2(1216, 192)).col] = BARRIER;
-        map[vec2_to_array(Vec2(1088, 832)).row][vec2_to_array(Vec2(1088, 832)).col] = BARRIER;
-        map[vec2_to_array(Vec2(832, 576)).row][vec2_to_array(Vec2(832, 576)).col] = BARRIER;
+        mapGrid[3][1] = PATH;
+        mapGrid[3][2] = PATH;
+        mapGrid[3][3] = PATH;
+        mapGrid[3][4] = PATH;
+        mapGrid[3][5] = PATH;
+        mapGrid[2][6] = PATH;
+        mapGrid[2][7] = PATH;
+        mapGrid[2][8] = PATH;
+        mapGrid[2][9] = PATH;
+        mapGrid[3][9] = PATH;
+        mapGrid[4][9] = PATH;
+        mapGrid[5][9] = PATH;
+        mapGrid[5][8] = PATH;
+        mapGrid[5][7] = PATH;
+        mapGrid[5][6] = PATH;
+        mapGrid[5][5] = PATH;
+        mapGrid[5][4] = PATH;
+        mapGrid[5][3] = PATH;
+        mapGrid[5][2] = PATH;
+        mapGrid[6][2] = PATH;
+        mapGrid[7][2] = PATH;
+        mapGrid[7][3] = PATH;
+        mapGrid[7][4] = PATH;
+        mapGrid[7][5] = PATH;
+        mapGrid[7][6] = PATH;
+        mapGrid[7][7] = PATH;
+        mapGrid[7][8] = PATH;
+        mapGrid[7][9] = PATH;
+        mapGrid[7][10] = PATH;
+        mapGrid[7][11] = PATH;
+        mapGrid[vec2_to_array(Vec2(836, 832)).row][vec2_to_array(Vec2(836, 832)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(836, 192)).row][vec2_to_array(Vec2(836, 192)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(964, 192)).row][vec2_to_array(Vec2(964, 192)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(320, 448)).row][vec2_to_array(Vec2(320, 448)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(448, 448)).row][vec2_to_array(Vec2(448, 448)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(1216, 192)).row][vec2_to_array(Vec2(1216, 192)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(1088, 832)).row][vec2_to_array(Vec2(1088, 832)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(832, 576)).row][vec2_to_array(Vec2(832, 576)).col] = BARRIER;
         //2
-        map[vec2_to_array(Vec2(512+64, 192)).row][vec2_to_array(Vec2(512+64, 192)).col] = BARRIER;
-        map[vec2_to_array(Vec2(512-64, 192)).row][vec2_to_array(Vec2(512-64, 192)).col] = BARRIER;
-        map[vec2_to_array(Vec2(640-64, 448)).row][vec2_to_array(Vec2(640-64, 448)).col] = BARRIER;
-        map[vec2_to_array(Vec2(640 + 64, 448)).row][vec2_to_array(Vec2(640 + 64, 448)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(512+64, 192)).row][vec2_to_array(Vec2(512+64, 192)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(512-64, 192)).row][vec2_to_array(Vec2(512-64, 192)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(640-64, 448)).row][vec2_to_array(Vec2(640-64, 448)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(640 + 64, 448)).row][vec2_to_array(Vec2(640 + 64, 448)).col] = BARRIER;
         //4
-        map[vec2_to_array(Vec2(1024-64, 512-64)).row][vec2_to_array(Vec2(1024-64, 512-64)).col] = BARRIER;
-        map[vec2_to_array(Vec2(1024-64, 512+64)).row][vec2_to_array(Vec2(1024-64, 512+64)).col] = BARRIER;
-        map[vec2_to_array(Vec2(1024 + 64, 512 - 64)).row][vec2_to_array(Vec2(1024+64, 512-64)).col] = BARRIER;
-        map[vec2_to_array(Vec2(1024 + 64, 512 + 64)).row][vec2_to_array(Vec2(1024+64, 512 + 64)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(1024-64, 512-64)).row][vec2_to_array(Vec2(1024-64, 512-64)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(1024-64, 512+64)).row][vec2_to_array(Vec2(1024-64, 512+64)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(1024 + 64, 512 - 64)).row][vec2_to_array(Vec2(1024+64, 512-64)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(1024 + 64, 512 + 64)).row][vec2_to_array(Vec2(1024+64, 512 + 64)).col] = BARRIER;
 
-        map[vec2_to_array(Vec2(1408-64, 512-64)).row][vec2_to_array(Vec2(1408-64, 512-64)).col] = BARRIER;
-        map[vec2_to_array(Vec2(1408-64, 512+64)).row][vec2_to_array(Vec2(1408-64, 512+64)).col] = BARRIER;
-        map[vec2_to_array(Vec2(1408 + 64, 512 - 64)).row][vec2_to_array(Vec2(1408 + 64, 512 - 64)).col] = BARRIER;
-        map[vec2_to_array(Vec2(1408 + 64, 512 + 64)).row][vec2_to_array(Vec2(1408 + 64, 512 + 64)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(1408-64, 512-64)).row][vec2_to_array(Vec2(1408-64, 512-64)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(1408-64, 512+64)).row][vec2_to_array(Vec2(1408-64, 512+64)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(1408 + 64, 512 - 64)).row][vec2_to_array(Vec2(1408 + 64, 512 - 64)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(1408 + 64, 512 + 64)).row][vec2_to_array(Vec2(1408 + 64, 512 + 64)).col] = BARRIER;
 
-        map[vec2_to_array(Vec2(384-64, 768-64)).row][vec2_to_array(Vec2(384-64, 768-64)).col] = BARRIER;
-        map[vec2_to_array(Vec2(384 - 64, 768 + 64)).row][vec2_to_array(Vec2(384 - 64, 768 + 64)).col] = BARRIER;
-        map[vec2_to_array(Vec2(384 + 64, 768 - 64)).row][vec2_to_array(Vec2(384 + 64, 768 - 64)).col] = BARRIER;
-        map[vec2_to_array(Vec2(384 + 64, 768 + 64)).row][vec2_to_array(Vec2(384 + 64, 768 + 64)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(384-64, 768-64)).row][vec2_to_array(Vec2(384-64, 768-64)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(384 - 64, 768 + 64)).row][vec2_to_array(Vec2(384 - 64, 768 + 64)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(384 + 64, 768 - 64)).row][vec2_to_array(Vec2(384 + 64, 768 - 64)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(384 + 64, 768 + 64)).row][vec2_to_array(Vec2(384 + 64, 768 + 64)).col] = BARRIER;
 
 
 
@@ -973,80 +973,80 @@ void MAP_SCENE::initializeMapArray(int level) {
 
        this->addChild(barrierManager);
        //barrierManager->createMouseEventListener();
-        map[4][2] = PATH;
-        map[5][2] = PATH;
-        map[6][2] = PATH;
-        map[7][2] = PATH;
-        map[4][3] = PATH;
-        map[4][4] = PATH;
-        map[4][5] = PATH;
-        map[3][5] = PATH;
-        map[3][6] = PATH;
-        map[3][7] = PATH;
-        map[2][7] = PATH;
-        map[2][8] = PATH;
-        map[2][9] = PATH;
-        map[2][10] = PATH;
-        map[3][10] = PATH;
-        map[4][10] = PATH;
-        map[5][10] = PATH;
-        map[5][9] = PATH;
-        map[5][8] = PATH;
-        map[5][7] = PATH;
-        map[6][7] = PATH;
-        map[6][6] = PATH;
-        map[6][5] = PATH;
-        map[7][5] = PATH;
-        map[7][4] = PATH;
-        map[7][3] = PATH;
-        map[7][2] = PATH;
+        mapGrid[4][2] = PATH;
+        mapGrid[5][2] = PATH;
+        mapGrid[6][2] = PATH;
+        mapGrid[7][2] = PATH;
+        mapGrid[4][3] = PATH;
+        mapGrid[4][4] = PATH;
+        mapGrid[4][5] = PATH;
+        mapGrid[3][5] = PATH;
+        mapGrid[3][6] = PATH;
+        mapGrid[3][7] = PATH;
+        mapGrid[2][7] = PATH;
+        mapGrid[2][8] = PATH;
+        mapGrid[2][9] = PATH;
+        mapGrid[2][10] = PATH;
+        mapGrid[3][10] = PATH;
+        mapGrid[4][10] = PATH;
+        mapGrid[5][10] = PATH;
+        mapGrid[5][9] = PATH;
+        mapGrid[5][8] = PATH;
+        mapGrid[5][7] = PATH;
+        mapGrid[6][7] = PATH;
+        mapGrid[6][6] = PATH;
+        mapGrid[6][5] = PATH;
+        mapGrid[7][5] = PATH;
+        mapGrid[7][4] = PATH;
+        mapGrid[7][3] = PATH;
+        mapGrid[7][2] = PATH;
 
-        map[vec2_to_array(Vec2(64, 832)).row][vec2_to_array(Vec2(64, 832)).col] = BARRIER;
-        map[vec2_to_array(Vec2(192, 832)).row][vec2_to_array(Vec2(192, 832)).col] = BARRIER;
-        map[vec2_to_array(Vec2(320, 832)).row][vec2_to_array(Vec2(320, 832)).col] = BARRIER;
-        map[vec2_to_array(Vec2(448, 832)).row][vec2_to_array(Vec2(448, 832)).col] = BARRIER;
-        map[vec2_to_array(Vec2(576, 832)).row][vec2_to_array(Vec2(1472, 832)).col] = BARRIER;
-        map[vec2_to_array(Vec2(960, 832)).row][vec2_to_array(Vec2(960, 832)).col] = BARRIER;
-        map[vec2_to_array(Vec2(1088, 832)).row][vec2_to_array(Vec2(1088, 832)).col] = BARRIER;
-        map[vec2_to_array(Vec2(1472, 832)).row][vec2_to_array(Vec2(1472, 832)).col] = BARRIER;
-        map[vec2_to_array(Vec2(1280, 832)).row][vec2_to_array(Vec2(1280, 832)).col] = BARRIER;
-        map[vec2_to_array(Vec2(832, 448)).row][vec2_to_array(Vec2(832, 448)).col] = BARRIER;
-        map[vec2_to_array(Vec2(64, 704)).row][vec2_to_array(Vec2(64, 704)).col] = BARRIER;
-        map[vec2_to_array(Vec2(64, 576)).row][vec2_to_array(Vec2(64, 576)).col] = BARRIER;
-        map[vec2_to_array(Vec2(1472, 704)).row][vec2_to_array(Vec2(1472, 704)).col] = BARRIER;
-        map[vec2_to_array(Vec2(1472, 576)).row][vec2_to_array(Vec2(1472, 576)).col] = BARRIER;
-        map[vec2_to_array(Vec2(1472, 448)).row][vec2_to_array(Vec2(1472, 448)).col] = BARRIER;
-        map[vec2_to_array(Vec2(1472, 320)).row][vec2_to_array(Vec2(1472, 320)).col] = BARRIER;
-        map[vec2_to_array(Vec2(1472, 192)).row][vec2_to_array(Vec2(1472, 192)).col] = BARRIER;
-        map[vec2_to_array(Vec2(1344, 192)).row][vec2_to_array(Vec2(1344, 192)).col] = BARRIER;
-        map[vec2_to_array(Vec2(960, 64)).row][vec2_to_array(Vec2(960, 64)).col] = BARRIER;
-        map[vec2_to_array(Vec2(832, 64)).row][vec2_to_array(Vec2(832, 64)).col] = BARRIER;
-        map[vec2_to_array(Vec2(512, 704)).row][vec2_to_array(Vec2(512, 704)).col] = BARRIER;
-        map[vec2_to_array(Vec2(1152, 64)).row][vec2_to_array(Vec2(1152, 64)).col] = BARRIER;
-        map[vec2_to_array(Vec2(832, 64)).row][vec2_to_array(Vec2(832, 64)).col] = BARRIER;
-        map[vec2_to_array(Vec2(768, 320)).row][vec2_to_array(Vec2(768, 320)).col] = BARRIER;
-        map[vec2_to_array(Vec2(512, 576)).row][vec2_to_array(Vec2(512, 576)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(64, 832)).row][vec2_to_array(Vec2(64, 832)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(192, 832)).row][vec2_to_array(Vec2(192, 832)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(320, 832)).row][vec2_to_array(Vec2(320, 832)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(448, 832)).row][vec2_to_array(Vec2(448, 832)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(576, 832)).row][vec2_to_array(Vec2(1472, 832)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(960, 832)).row][vec2_to_array(Vec2(960, 832)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(1088, 832)).row][vec2_to_array(Vec2(1088, 832)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(1472, 832)).row][vec2_to_array(Vec2(1472, 832)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(1280, 832)).row][vec2_to_array(Vec2(1280, 832)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(832, 448)).row][vec2_to_array(Vec2(832, 448)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(64, 704)).row][vec2_to_array(Vec2(64, 704)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(64, 576)).row][vec2_to_array(Vec2(64, 576)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(1472, 704)).row][vec2_to_array(Vec2(1472, 704)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(1472, 576)).row][vec2_to_array(Vec2(1472, 576)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(1472, 448)).row][vec2_to_array(Vec2(1472, 448)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(1472, 320)).row][vec2_to_array(Vec2(1472, 320)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(1472, 192)).row][vec2_to_array(Vec2(1472, 192)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(1344, 192)).row][vec2_to_array(Vec2(1344, 192)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(960, 64)).row][vec2_to_array(Vec2(960, 64)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(832, 64)).row][vec2_to_array(Vec2(832, 64)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(512, 704)).row][vec2_to_array(Vec2(512, 704)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(1152, 64)).row][vec2_to_array(Vec2(1152, 64)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(832, 64)).row][vec2_to_array(Vec2(832, 64)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(768, 320)).row][vec2_to_array(Vec2(768, 320)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(512, 576)).row][vec2_to_array(Vec2(512, 576)).col] = BARRIER;
         //2
-        map[vec2_to_array(Vec2(128-64, 384)).row][vec2_to_array(Vec2(128-64, 384)).col] = BARRIER;
-        map[vec2_to_array(Vec2(128+64, 384)).row][vec2_to_array(Vec2(128+64, 384)).col] = BARRIER;
-        map[vec2_to_array(Vec2(512-64, 256)).row][vec2_to_array(Vec2(512-64, 256)).col] = BARRIER;
-        map[vec2_to_array(Vec2(512+ 64, 256)).row][vec2_to_array(Vec2(512+64, 256)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(128-64, 384)).row][vec2_to_array(Vec2(128-64, 384)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(128+64, 384)).row][vec2_to_array(Vec2(128+64, 384)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(512-64, 256)).row][vec2_to_array(Vec2(512-64, 256)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(512+ 64, 256)).row][vec2_to_array(Vec2(512+64, 256)).col] = BARRIER;
         //4
-        map[vec2_to_array(Vec2(1152-64, 512-64)).row][vec2_to_array(Vec2(1152-64, 512-64)).col] = BARRIER;
-        map[vec2_to_array(Vec2(1152 - 64, 512 +64)).row][vec2_to_array(Vec2(1152 - 64, 512+64)).col] = BARRIER;
-        map[vec2_to_array(Vec2(1152+ 64, 512 - 64)).row][vec2_to_array(Vec2(1152+64, 512 - 64)).col] = BARRIER;
-        map[vec2_to_array(Vec2(1152 + 64, 512 + 64)).row][vec2_to_array(Vec2(1152+64, 512+64)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(1152-64, 512-64)).row][vec2_to_array(Vec2(1152-64, 512-64)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(1152 - 64, 512 +64)).row][vec2_to_array(Vec2(1152 - 64, 512+64)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(1152+ 64, 512 - 64)).row][vec2_to_array(Vec2(1152+64, 512 - 64)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(1152 + 64, 512 + 64)).row][vec2_to_array(Vec2(1152+64, 512+64)).col] = BARRIER;
 
-        map[vec2_to_array(Vec2(768-64, 768-64)).row][vec2_to_array(Vec2(768-64, 768-64)).col] = BARRIER;
-        map[vec2_to_array(Vec2(768+64, 768 - 64)).row][vec2_to_array(Vec2(768 + 64, 768 - 64)).col] = BARRIER;
-        map[vec2_to_array(Vec2(768 - 64, 768 + 64)).row][vec2_to_array(Vec2(768 - 64, 768+64)).col] = BARRIER;
-        map[vec2_to_array(Vec2(768 + 64, 768 + 64)).row][vec2_to_array(Vec2(768 + 64, 768 + 64)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(768-64, 768-64)).row][vec2_to_array(Vec2(768-64, 768-64)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(768+64, 768 - 64)).row][vec2_to_array(Vec2(768 + 64, 768 - 64)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(768 - 64, 768 + 64)).row][vec2_to_array(Vec2(768 - 64, 768+64)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(768 + 64, 768 + 64)).row][vec2_to_array(Vec2(768 + 64, 768 + 64)).col] = BARRIER;
 
 
-        map[vec2_to_array(Vec2(256-64, 640-64)).row][vec2_to_array(Vec2(256-64, 640-64)).col] = BARRIER;
-        map[vec2_to_array(Vec2(256-64, 640+64)).row][vec2_to_array(Vec2(256-64, 640+64)).col] = BARRIER;
-        map[vec2_to_array(Vec2(256+64, 640-64)).row][vec2_to_array(Vec2(256+64, 640-64)).col] = BARRIER;
-        map[vec2_to_array(Vec2(256 + 64, 640+64)).row][vec2_to_array(Vec2(256 + 64, 640+64)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(256-64, 640-64)).row][vec2_to_array(Vec2(256-64, 640-64)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(256-64, 640+64)).row][vec2_to_array(Vec2(256-64, 640+64)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(256+64, 640-64)).row][vec2_to_array(Vec2(256+64, 640-64)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(256 + 64, 640+64)).row][vec2_to_array(Vec2(256 + 64, 640+64)).col] = BARRIER;
 
         break;
 
