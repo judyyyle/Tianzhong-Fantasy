@@ -1,77 +1,156 @@
 #pragma once
+#include <vector>
 #include "cocos2d.h"
 #include "HelloWorldScene.h"
-USING_NS_CC;
 
+USING_NS_CC;
+using namespace cocos2d;
+
+#define MONSTER_TOTAL 4
+
+#define NORMAL 0            //æ­£å¸¸
+#define HUGE 1              //è¡€åŽš
+#define FAST 2              //é«˜é€Ÿ
+#define BOSS 3              //BOSSæ€ª
+
+#define ADVENTURE1 0    //map1
+#define ADVENTURE2 1    //map2
+#define BOSS1 2         //map3
+
+#define STOP -1
+#define UP 0
+#define DOWN 1
+#define LEFT 2
+#define RIGHT 3
+
+/*
 #define BARRIER 0
 #define MONSTER 1
 
-#define NORMAL 0            //Õý³£¹ÖÎï
-#define FAST 1              //¸ßËÙ¹ÖÎï
-#define HUGE 2              //Ñªºñ¹ÖÎï
-#define BARRIER_1 3         //Ò»¸ñÕÏ°­
-#define BARRIER_2 4         //Á½¸ñÕÏ°­
-#define BARRIER_3 5         //ËÄ¸ñÕÏ°­
-//ÕÏ°­
-#define BARRIER_ONE   1     //Ò»¸ñµÄÕÏ°­
-#define BARRIER_TWO   2     //Á½¸ñµÄÕÏ°­
-#define BARRIER_FOUR  4     //ËÄ¸ñµÄÕÏ°­
-#define BARRIER_HP_ONE     1600               //Ò»¸ñÕÏ°­ÑªÁ¿
-#define BARRIER_HP_TWO     3 * BARRIER_HP_ONE //Á½¸ñÕÏ°­ÑªÁ¿
-#define BARRIER_HP_FOUR    3 * BARRIER_HP_TWO //ËÄ¸ñÕÏ°­ÑªÁ¿
-#define BARRIER_COIN_ONE     50 
-#define BARRIER_COIN_TWO     2 * BARRIER_COIN_ONE //Á½¸ñÕÏ°­½ð±Ò
-#define BARRIER_COIN_FOUR    2 * BARRIER_COIN_TWO //ËÄ¸ñÕÏ°­½ð±Ò
-//¹ÖÎï
-#define MONSTER_NORMAL 0    //Õý³£¹ÖÎï
-#define MONSTER_FAST   1    //¸ßËÙ¹ÖÎï
-#define MONSTER_HUGE   2    //Ñªºñ¹ÖÎï
-#define MONSTER_FAST_HP       20                     //¸ßËÙ¹ÖÎïÑªÁ¿
-#define MONSTER_NORMAL_HP     3 * MONSTER_FAST_HP    //Õý³£¹ÖÎïÑªÁ¿
-#define MONSTER_HUGE_HP       3 * MONSTER_NORMAL_HP  //Ñªºñ¹ÖÎïÑªÁ¿
-#define MONSTER_HUGE_SPEED    100                        //Ñªºñ¹ÖÎïËÙ¶È
-#define MONSTER_NORMAL_SPEED  1.5*MONSTER_HUGE_SPEED     //Õý³£¹ÖÎïËÙ¶È
-#define MONSTER_FAST_SPEED    2*MONSTER_NORMAL_SPEED     //¸ßËÙ¹ÖÎïËÙ¶È
-#define MONSTER_COIN_NORMAL   18    //Õý³£¹ÖÎïºÍÑªºñ¹ÖÎïµôÂä½ð±Ò
-#define MONSTER_COIN_HUGE     188   //Ñªºñ¹ÖÎïµôÂä½ð±Ò
-//Â·¾¶
-#define BARRIER_PICTURE  "/Enemy/barrier/0/"   //ÕÏ°­Â·¾¶
-#define MONSTER_PICTURE  "/Enemy/monster/0/"   //¹ÖÎïÂ·¾¶
+#define NORMAL 0            //æ­£å¸¸æ€ªç‰©
+#define FAST 1              //é«˜é€Ÿæ€ªç‰©
+#define HUGE 2              //è¡€åŽšæ€ªç‰©
+#define BARRIER_1 3         //ä¸€æ ¼éšœç¢
+#define BARRIER_2 4         //ä¸¤æ ¼éšœç¢
+#define BARRIER_3 5         //å››æ ¼éšœç¢
+//éšœç¢
+#define BARRIER_ONE   1     //ä¸€æ ¼çš„éšœç¢
+#define BARRIER_TWO   2     //ä¸¤æ ¼çš„éšœç¢
+#define BARRIER_FOUR  4     //å››æ ¼çš„éšœç¢
+#define BARRIER_HP_ONE     1600               //ä¸€æ ¼éšœç¢è¡€é‡
+#define BARRIER_HP_TWO     3 * BARRIER_HP_ONE //ä¸¤æ ¼éšœç¢è¡€é‡
+#define BARRIER_HP_FOUR    3 * BARRIER_HP_TWO //å››æ ¼éšœç¢è¡€é‡
+#define BARRIER_COIN_ONE     50
+#define BARRIER_COIN_TWO     2 * BARRIER_COIN_ONE //ä¸¤æ ¼éšœç¢é‡‘å¸
+#define BARRIER_COIN_FOUR    2 * BARRIER_COIN_TWO //å››æ ¼éšœç¢é‡‘å¸
+//æ€ªç‰©
+#define MONSTER_NORMAL 0    //æ­£å¸¸æ€ªç‰©
+#define MONSTER_FAST   1    //é«˜é€Ÿæ€ªç‰©
+#define MONSTER_HUGE   2    //è¡€åŽšæ€ªç‰©
+#define MONSTER_FAST_HP       20                     //é«˜é€Ÿæ€ªç‰©è¡€é‡
+#define MONSTER_NORMAL_HP     3 * MONSTER_FAST_HP    //æ­£å¸¸æ€ªç‰©è¡€é‡
+#define MONSTER_HUGE_HP       3 * MONSTER_NORMAL_HP  //è¡€åŽšæ€ªç‰©è¡€é‡
+#define MONSTER_HUGE_SPEED    100                        //è¡€åŽšæ€ªç‰©é€Ÿåº¦
+#define MONSTER_NORMAL_SPEED  1.5*MONSTER_HUGE_SPEED     //æ­£å¸¸æ€ªç‰©é€Ÿåº¦
+#define MONSTER_FAST_SPEED    2*MONSTER_NORMAL_SPEED     //é«˜é€Ÿæ€ªç‰©é€Ÿåº¦
+#define MONSTER_COIN_NORMAL   18    //æ­£å¸¸æ€ªç‰©å’Œè¡€åŽšæ€ªç‰©æŽ‰è½é‡‘å¸
+#define MONSTER_COIN_HUGE     188   //è¡€åŽšæ€ªç‰©æŽ‰è½é‡‘å¸
+//è·¯å¾„
+#define BARRIER_PICTURE  "/Enemy/barrier/0/"   //éšœç¢è·¯å¾„
+#define MONSTER_PICTURE  "/Enemy/monster/0/"   //æ€ªç‰©è·¯å¾„
 
-class Monster_value {
-public:
-	int type;                      //¹ÖÎï¡¢ÕÏ°­µÄÖÖÀà
-	int HP;                        //ÉúÃüÖµ
-	int full_HP;                   //ÂúÑª
-	int ATK;                       //¹¥»÷Öµ
+*/
 
-	int Coin;                      //»ñµÃµÄ½ð±Ò
 
-	int Speed;                     //ÒÆ¶¯ËÙ¶È
-	int move_Count;                //ÒÆ¶¯²½Êý
-	double poison_Time = 0;        //ÖÐ¶¾Ê±¼ä
-	int poison_Speed;              //ÖÐ¶¾µÄÒÆ¶¯ËÙ¶È
+struct MonsterType {
+    //	int type;                      //æ€ªç‰©ã€éšœç¢çš„ç§ç±»
+    int hp;           //å®žæ—¶è¡€é‡
+    int max_hp;       //æ»¡è¡€é‡                 
+    int speed;        //ç§»åŠ¨é€Ÿåº¦
+    //	int full_HP;                   //æ»¡è¡€
+    //	int ATK;                       //æ”»å‡»å€¼
 
-	cocos2d::Sprite* enemy_picture;//ÕÏ°­ÌùÍ¼
+    //	int coin;                      //èŽ·å¾—çš„é‡‘å¸
+
+    //	int move_Count;                //ç§»åŠ¨æ­¥æ•°
+    //	double poison_Time = 0;        //ä¸­æ¯’æ—¶é—´
+    //	int poison_Speed;              //ä¸­æ¯’çš„ç§»åŠ¨é€Ÿåº¦
 };
 
-class Monster : public cocos2d::Sprite {
-private:
-    Monster_value monster;
+struct MapPath {
+    Vec2 point;
+    int x;
+    int y;
+    int direction;
+};
+
+class Monster : public Sprite {
+private:   
+    MapPath* path;
+    MonsterType monster_type;
+    Sprite* hp_border, * hp;
+    int path_count;
+    int path_total;
 public:
-    bool init() override {
-        if (!Sprite::init()) {
-            return false;
-        }
-        // ³õÊ¼»¯ monster
-        // this->monster = Monster_value{...};
-        return true;
-    }
-
-    void initType(int stage);
-
     CREATE_FUNC(Monster);
 
-    static cocos2d::Sprite* createSprite();
+    //static Sprite* createSprite();
+
+    virtual bool init();
+    void initType(int monster_type,int map_type);
+    void update(float dt);
 };
 
+extern std::vector<Monster*> monsters;
+
+class MonsterCreate : public Sprite {    
+public:
+    CREATE_FUNC(MonsterCreate);
+
+    void initMonster(int monster_type, int map_type) {
+        auto monster = Monster::create();
+        if (!monster) {
+            CCLOG("Failed to create monster sprite!");
+            return;
+        }
+        monster->initType(monster_type, map_type);
+
+        monsters.push_back(monster);
+        this->addChild(monster);
+    }
+
+    void MonsterWaves(int map_type) {
+        switch (map_type) {
+        case ADVENTURE1:
+            for (int i = 0; i < 5; i++) {
+                this->runAction(Sequence::create(DelayTime::create(i * 1.4f),
+                    CallFunc::create([=]() {
+                        initMonster(NORMAL, map_type);
+                        }),
+                    nullptr));
+            }
+            for (int i = 0; i < 5; i++) {
+                this->runAction(Sequence::create(DelayTime::create((i + 5) * 1.0f),
+                    CallFunc::create([=]() {
+                        initMonster(FAST, ADVENTURE1);
+                        }),
+                    nullptr));
+
+            }
+
+            for (int i = 0; i < 5; i++) {
+                this->runAction(Sequence::create(DelayTime::create((i + 10) * 1.6f),
+                    CallFunc::create([=]() {
+                        initMonster(HUGE, ADVENTURE1);
+                        }),
+                    nullptr));
+
+            }
+            break;
+        case ADVENTURE2:
+            break;
+        case BOSS1:
+            break;
+        }       
+    }
+};
