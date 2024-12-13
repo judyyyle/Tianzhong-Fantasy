@@ -6,122 +6,139 @@
 USING_NS_CC;
 using namespace cocos2d;
 
-#define MONSTER_TOTAL 4
+#define MONSTER_TOTAL 4   //总共有 4 种怪物类型
 
-#define NORMAL 0            //����
-#define HUGE 1              //Ѫ��
-#define FAST 2              //����
-#define BOSS 3              //BOSS��
+//四种怪物的编号
+#define NORMAL 0            //正常
+#define HUGE 1              //血厚
+#define FAST 2              //高速
+#define BOSS 3              //BOSS怪
 
+//三种怪物的编号
 #define ADVENTURE1 0    //map1
 #define ADVENTURE2 1    //map2
 #define BOSS1 2         //map3
 
-#define STOP -1
-#define UP 0
-#define DOWN 1
-#define LEFT 2
-#define RIGHT 3
+//怪物移动的方向
+#define STOP -1   //停止
+#define UP 0      //上移
+#define DOWN 1    //下移
+#define LEFT 2    //左移
+#define RIGHT 3   //右移
 
 /*
 #define BARRIER 0
 #define MONSTER 1
 
-#define NORMAL 0            //��������
-#define FAST 1              //���ٹ���
-#define HUGE 2              //Ѫ�����
-#define BARRIER_1 3         //һ���ϰ�
-#define BARRIER_2 4         //�����ϰ�
-#define BARRIER_3 5         //�ĸ��ϰ�
-//�ϰ�
-#define BARRIER_ONE   1     //һ����ϰ�
-#define BARRIER_TWO   2     //������ϰ�
-#define BARRIER_FOUR  4     //�ĸ���ϰ�
-#define BARRIER_HP_ONE     1600               //һ���ϰ�Ѫ��
-#define BARRIER_HP_TWO     3 * BARRIER_HP_ONE //�����ϰ�Ѫ��
-#define BARRIER_HP_FOUR    3 * BARRIER_HP_TWO //�ĸ��ϰ�Ѫ��
+#define NORMAL 0            //正常怪物
+#define FAST 1              //高速怪物
+#define HUGE 2              //血厚怪物
+#define BARRIER_1 3         //一格障碍
+#define BARRIER_2 4         //两格障碍
+#define BARRIER_3 5         //四格障碍
+//障碍
+#define BARRIER_ONE   1     //一格的障碍
+#define BARRIER_TWO   2     //两格的障碍
+#define BARRIER_FOUR  4     //四格的障碍
+#define BARRIER_HP_ONE     1600               //一格障碍血量
+#define BARRIER_HP_TWO     3 * BARRIER_HP_ONE //两格障碍血量
+#define BARRIER_HP_FOUR    3 * BARRIER_HP_TWO //四格障碍血量
 #define BARRIER_COIN_ONE     50
-#define BARRIER_COIN_TWO     2 * BARRIER_COIN_ONE //�����ϰ����
-#define BARRIER_COIN_FOUR    2 * BARRIER_COIN_TWO //�ĸ��ϰ����
-//����
-#define MONSTER_NORMAL 0    //��������
-#define MONSTER_FAST   1    //���ٹ���
-#define MONSTER_HUGE   2    //Ѫ�����
-#define MONSTER_FAST_HP       20                     //���ٹ���Ѫ��
-#define MONSTER_NORMAL_HP     3 * MONSTER_FAST_HP    //��������Ѫ��
-#define MONSTER_HUGE_HP       3 * MONSTER_NORMAL_HP  //Ѫ�����Ѫ��
-#define MONSTER_HUGE_SPEED    100                        //Ѫ������ٶ�
-#define MONSTER_NORMAL_SPEED  1.5*MONSTER_HUGE_SPEED     //���������ٶ�
-#define MONSTER_FAST_SPEED    2*MONSTER_NORMAL_SPEED     //���ٹ����ٶ�
-#define MONSTER_COIN_NORMAL   18    //���������Ѫ����������
-#define MONSTER_COIN_HUGE     188   //Ѫ����������
-//·��
-#define BARRIER_PICTURE  "/Enemy/barrier/0/"   //�ϰ�·��
-#define MONSTER_PICTURE  "/Enemy/monster/0/"   //����·��
+#define BARRIER_COIN_TWO     2 * BARRIER_COIN_ONE //两格障碍金币
+#define BARRIER_COIN_FOUR    2 * BARRIER_COIN_TWO //四格障碍金币
+//怪物
+#define MONSTER_NORMAL 0    //正常怪物
+#define MONSTER_FAST   1    //高速怪物
+#define MONSTER_HUGE   2    //血厚怪物
+#define MONSTER_FAST_HP       20                     //高速怪物血量
+#define MONSTER_NORMAL_HP     3 * MONSTER_FAST_HP    //正常怪物血量
+#define MONSTER_HUGE_HP       3 * MONSTER_NORMAL_HP  //血厚怪物血量
+#define MONSTER_HUGE_SPEED    100                        //血厚怪物速度
+#define MONSTER_NORMAL_SPEED  1.5*MONSTER_HUGE_SPEED     //正常怪物速度
+#define MONSTER_FAST_SPEED    2*MONSTER_NORMAL_SPEED     //高速怪物速度
+#define MONSTER_COIN_NORMAL   18    //正常怪物和血厚怪物掉落金币
+#define MONSTER_COIN_HUGE     188   //血厚怪物掉落金币
+//路径
+#define BARRIER_PICTURE  "/Enemy/barrier/0/"   //障碍路径
+#define MONSTER_PICTURE  "/Enemy/monster/0/"   //怪物路径
 
 */
 
 
 struct MonsterType {
-    //	int type;                      //����ϰ�������
-    int hp;           //ʵʱѪ��
-    int max_hp;       //��Ѫ��                 
-    int speed;        //�ƶ��ٶ�
-    //	int full_HP;                   //��Ѫ
-    //	int ATK;                       //����ֵ
+    //	int type;                      //怪物、障碍的种类
+    int hp;           //实时血量
+    int max_hp;       //满血量                 
+    int speed;        //移动速度
+    //	int full_HP;                   //满血
+    //	int ATK;                       //攻击值
 
-    //	int coin;                      //��õĽ��
+    //	int coin;                      //获得的金币
 
-    //	int move_Count;                //�ƶ�����
-    //	double poison_Time = 0;        //�ж�ʱ��
-    //	int poison_Speed;              //�ж����ƶ��ٶ�
+    //	int move_Count;                //移动步数
+    //	double poison_Time = 0;        //中毒时间
+    //	int poison_Speed;              //中毒的移动速度
 };
 
 struct MapPath {
-    Vec2 point;
-    int x;
-    int y;
-    int direction;
+    Vec2 point;     // 路径上的坐标点
+    int x;          // X 方向的增量
+    int y;          // Y 方向的增量
+    int direction;  // 移动方向，UP/DOWN/LEFT/RIGHT/STOP
 };
 
+//定义怪物类
 class Monster : public Sprite {
 private:   
-    MapPath* path;
-    MonsterType monster_type;
-    Sprite* hp_border, * hp;
-    int path_count;
-    int path_total;
+    MapPath* path;             // 存储怪物路径的数组
+    MonsterType monster_type;  // 怪物的类型（血量、速度等）
+    Sprite* hp_border, * hp;   // 怪物的血条背景和当前血量
+    int path_count;            // 当前怪物所在路径的索引
+    int path_total;            // 路径的总数
 public:
     CREATE_FUNC(Monster);
 
-    //static Sprite* createSprite();
-
+    //初始化怪物
     virtual bool init();
+
+    //初始化怪物类型和路径
     void initType(int monster_type,int map_type);
+
+    //每帧更新怪物的位置和血量
     void update(float dt);
 };
 
+//存储所有怪物的 vector
 extern std::vector<Monster*> monsters;
 
+// MonsterCreate 类，用于创建怪物并管理怪物生成的波次
 class MonsterCreate : public Sprite {    
 public:
     CREATE_FUNC(MonsterCreate);
 
+    //初始化怪物并将其添加到场景
     void initMonster(int monster_type, int map_type) {
         auto monster = Monster::create();
         if (!monster) {
             CCLOG("Failed to create monster sprite!");
             return;
         }
+        //初始化怪物类型和路径
         monster->initType(monster_type, map_type);
 
+        //将怪物添加到 monsters 向量中，管理所有怪物
         monsters.push_back(monster);
+
+        //将怪物添加为当前场景的子节点
         this->addChild(monster);
     }
 
+    //控制怪物的波次生成
     void MonsterWaves(int map_type) {
+        //针对不同地图类型，生成不同类型的怪物
         switch (map_type) {
         case ADVENTURE1:
+            //生成 5 波正常怪物，每波间隔 1.4 秒
             for (int i = 0; i < 5; i++) {
                 this->runAction(Sequence::create(DelayTime::create(i * 1.4f),
                     CallFunc::create([=]() {
@@ -129,6 +146,8 @@ public:
                         }),
                     nullptr));
             }
+
+            //生成 5 波高速怪物，每波间隔 1.0 秒
             for (int i = 0; i < 5; i++) {
                 this->runAction(Sequence::create(DelayTime::create((i + 5) * 1.0f),
                     CallFunc::create([=]() {
@@ -138,6 +157,7 @@ public:
 
             }
 
+            //生成 5 波血厚怪物，每波间隔 1.6 秒
             for (int i = 0; i < 5; i++) {
                 this->runAction(Sequence::create(DelayTime::create((i + 10) * 1.6f),
                     CallFunc::create([=]() {
