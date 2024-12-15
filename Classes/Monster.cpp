@@ -203,7 +203,45 @@ void Monster::update(float dt) {
     case STOP:  //如果路径指示怪物停止移动，不做操作直接返回
         return;
     }
+
+    if (this->monster_type.hp == 0 || path[path_count].direction == STOP) {
+
+    /**********************************************/
+    // 创建消失特效动画（两秒持续时间）
+    Vector<SpriteFrame*> frames;
+    for (int i = 1; i <= 6; ++i) {
+        std::string frameName = "/MonsterStart/monster_vanish_effect" + std::to_string(i) + ".png";
+        frames.pushBack(SpriteFrame::create(frameName, Rect(0, 0, 128, 128)));
+    }
+    // 每帧显示时间 = 总时间 / 帧数
+    float frameDuration = 0.5f / frames.size();
+    auto vanishAnimation = Animation::createWithSpriteFrames(frames, frameDuration);
+    auto vanishAnimate = Animate::create(vanishAnimation);
+    // 创建消失特效精灵
+    auto effect = Sprite::create("/MonsterStart/monster_vanish_effect1.png");
+    effect->setContentSize(Size(60, 60));
+    effect->setPosition(now_x, now_y); // 特效初始位置与怪物一致
+    this->getParent()->addChild(effect, 2);
+    // 消失怪物的回调
+    auto disappearMonster = CallFunc::create([effect, this]() {
+        CCLOG("Forcing removal of effect sprite");
+        if (effect->getParent()) {
+            effect->removeFromParentAndCleanup(true);  // 强制清除
+        }
+        else {
+            CCLOG("Effect sprite has no parent");
+        }
+        });
+
+    // 动作序列：播放动画 -> 隐藏怪物
+    auto monsterSequence = Sequence::create(vanishAnimate, disappearMonster, nullptr);
+    effect->runAction(monsterSequence);
     
+    /**********************************************/
+
+    this->removeFromParent();
+    }
+	
     //如果怪物的血量大于 0 且小于最大血量，更新血条的显示
     if (this->monster_type.hp > 0 && this->monster_type.hp < this->monster_type.max_hp) {
         //获取血条的当前尺寸
