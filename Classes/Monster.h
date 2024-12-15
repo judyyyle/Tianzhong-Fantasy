@@ -6,7 +6,12 @@
 USING_NS_CC;
 using namespace cocos2d;
 
-#define MONSTER_TOTAL 4   //总共有 4 种怪物类型
+extern int isPause; //是否暂停
+extern int allWaves; //总的波数
+extern int currentWave; //当前怪物的波数
+
+//总共有 4 种怪物类型
+#define MONSTER_TOTAL 4   
 
 //四种怪物的编号
 #define NORMAL 0            //正常
@@ -64,12 +69,13 @@ using namespace cocos2d;
 
 */
 
-
 struct MonsterType {
     //	int type;                      //怪物、障碍的种类
     int hp;           //实时血量
     int max_hp;       //满血量                 
-    int speed;        //移动速度
+    float speed;        //移动速度
+    bool is_slowing;    //是否减速
+    float slowing_time; //减速时间
     //	int full_HP;                   //满血
     //	int ATK;                       //攻击值
 
@@ -91,7 +97,7 @@ struct MapPath {
 class Monster : public Sprite {
 private:   
     MapPath* path;             // 存储怪物路径的数组
-    MonsterType monster_type;  // 怪物的类型（血量、速度等）
+    MonsterType type;  // 怪物的类型（血量、速度等）
     Sprite* hp_border, * hp;   // 怪物的血条背景和当前血量
     int path_count;            // 当前怪物所在路径的索引
     int path_total;            // 路径的总数
@@ -105,19 +111,43 @@ public:
     void initType(int monster_type,int map_type);
 
     //每帧更新怪物的位置和血量
-    void update(float dt);
+    virtual void update(float dt);
+
+    //受到攻击
+    void receiveDamage(float x,float y);
 };
 
 //存储所有怪物的 vector
 extern std::vector<Monster*> monsters;
 
 // MonsterCreate 类，用于创建怪物并管理怪物生成的波次
-class MonsterCreate : public Sprite {    
+class MonsterCreate : public Sprite {
+private:
+    float waveTimer = 0.0f;  // 计时器，用来控制每波怪物的生成间隔
+    int map_type;            //当前地图类型
 public:
     CREATE_FUNC(MonsterCreate);
 
+    virtual bool init() {
+        if (!Sprite::init()) { //调用父类的初始化方法
+            return false;
+        }
+        CCLOG("Monsters created successfully!");
+
+        //调用 Cocos2d 的定时器，定期更新怪物的位置
+        this->scheduleUpdate();
+
+        return true;
+    }
+
+    //获取map_type数据
+    void MonsterWaves(int MAPTYPE) {
+        map_type = MAPTYPE;
+    }
+
     //初始化怪物并将其添加到场景
-    void initMonster(int monster_type, int map_type) {
+    void initMonster(int monster_type) {
+        /**********************************************/
         //出怪特效
         auto effect = Sprite::create("/MonsterStart/monster_appear_effect.png");
         effect->setContentSize(Size(60, 60));
@@ -129,6 +159,7 @@ public:
         // 动作序列：放大特效 -> 淡出特效 -> 显示怪物
         auto monsterSequence = Sequence::create(monsterScaleEffect, monsterFadeEffect, nullptr);
         effect->runAction(monsterSequence);
+        /**********************************************/
 
         //怪物出现
         auto monster = Monster::create();
@@ -143,11 +174,14 @@ public:
         monsters.push_back(monster);
 
         //将怪物添加为当前场景的子节点
-        this->addChild(monster);
+        this->getParent()->addChild(monster, 2);
     }
 
+    /*
     //控制怪物的波次生成
-    void MonsterWaves(int map_type) {
+    void MonsterWaves(int MAPTYPE) {
+        map_type = MAPTYPE;
+
         //针对不同地图类型，生成不同类型的怪物
         switch (map_type) {
         case ADVENTURE1:
@@ -155,16 +189,16 @@ public:
             for (int i = 0; i < 5; i++) {
                 this->runAction(Sequence::create(DelayTime::create(i * 1.4f),
                     CallFunc::create([=]() {
-                        initMonster(NORMAL, map_type);
+                        initMonster(NORMAL);
                         }),
                     nullptr));
             }
-
+            
             //生成 5 波高速怪物，每波间隔 1.0 秒
             for (int i = 0; i < 5; i++) {
                 this->runAction(Sequence::create(DelayTime::create((i + 5) * 1.0f),
                     CallFunc::create([=]() {
-                        initMonster(FAST, ADVENTURE1);
+                        initMonster(FAST);
                         }),
                     nullptr));
 
@@ -174,16 +208,63 @@ public:
             for (int i = 0; i < 5; i++) {
                 this->runAction(Sequence::create(DelayTime::create((i + 10) * 1.6f),
                     CallFunc::create([=]() {
-                        initMonster(HUGE, ADVENTURE1);
+                        initMonster(HUGE);
                         }),
                     nullptr));
 
             }
+            
+
             break;
         case ADVENTURE2:
             break;
         case BOSS1:
             break;
-        }       
+        }
+    }
+    */
+    
+
+    virtual void update(float dt) {
+        //暂停
+        if (isPause) {
+            return;
+        }
+
+        //更新计时器
+        waveTimer += dt;
+
+        handleMonsterWaves(dt);
+    }
+
+    //控制怪物波次生成的函数
+    void handleMonsterWaves(float dt) {
+        float wave_interval[MONSTER_TOTAL] = { 1.4f,1.0f,1.6f };  // 每波生成的时间间隔（1.4秒）
+
+        // 判断当前时间是否到了生成怪物的时刻
+        if (currentWave < 5) {  // 例如最多生成5波怪物
+            // 第一波直接生成
+            if (currentWave == 1) {
+                // 生成怪物
+                initMonster(NORMAL);  // 你可以根据需要改变生成怪物的类型
+
+                // 增加波次计数
+                currentWave++;
+
+                // 重置计时器
+                waveTimer = 0.0f;
+            }
+            // 从第二波开始，按照固定间隔生成
+            else if (waveTimer >= wave_interval[NORMAL]) {
+                // 生成怪物
+                initMonster(NORMAL);  // 你可以根据需要改变生成怪物的类型
+
+                // 增加波次计数
+                currentWave++;
+
+                // 重置计时器
+                waveTimer = 0.0f;  // 重置计时器
+            }
+        }
     }
 };
