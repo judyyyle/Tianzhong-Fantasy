@@ -113,9 +113,9 @@ void GameMenu::start() {
         frame1.pushBack(SpriteFrame::create("/MonsterStart/3.png", Rect(30, -90, 200, 260)));
     }
     else if (level == 2) {
-        frame1.pushBack(SpriteFrame::create("/MonsterStart/1.png", Rect(-400, -310, 700, 450)));
-        frame1.pushBack(SpriteFrame::create("/MonsterStart/2.png", Rect(-400, -310, 700, 450)));
-        frame1.pushBack(SpriteFrame::create("/MonsterStart/3.png", Rect(-400, -310, 700, 450)));
+        frame1.pushBack(SpriteFrame::create("/MonsterStart/1.png", Rect(-1100, -180, 1400, 450)));
+        frame1.pushBack(SpriteFrame::create("/MonsterStart/2.png", Rect(-1100, -180, 1400, 450)));
+        frame1.pushBack(SpriteFrame::create("/MonsterStart/3.png", Rect(-1100, -180, 1400, 450)));
     }
     //动画
     auto animation = Animate::create(Animation::createWithSpriteFrames(frame1, 1.0f)); // 每帧1秒
