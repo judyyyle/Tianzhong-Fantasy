@@ -9,21 +9,24 @@
 #include "cocos2d.h"
 #include "Tower.h"
 #include "BarrierAppear.h"
+
 USING_NS_CC;
 
 using namespace cocos2d::ui;
 // 在 MAP_SCENE 类中，添加一个成员变量来保存提示图标
-int mapGrid[8][12];
-int level;
+int mapGrid[8][12] = { 0 };
+int level ;
 /**********************  全局变量  ***********************/
 //关卡选项
 
 int isPause;//是否暂停
 //游戏内数据
 int allWaves = 20;//总的波数
-int currentWaves = 14;//当前怪物的波数
+int currentWave = 14;//当前怪物的波数
 int carrotHP = 10;//记录萝卜的血量
 int coinNumber = 1234;//记录当前金币的数量
+
+ std::vector<Monster*> monsters;
 
 //世界坐标与数组的转换
 static struct array {
@@ -66,17 +69,17 @@ void GameMenu::start() {
     auto time_layer = Layer::create();
     this->addChild(time_layer);
     //倒计时背景盘
-    auto readyGoPanel = Sprite::create("/GameScene/ReadyGoPanel.png");
+    auto readyGoPanel = Sprite::create("/GamePlayScene/ReadyGoPanel.png");
     readyGoPanel->setPosition(Vec2(origin.x + visibleSize.width / 2,
         origin.y + visibleSize.height / 2));
     time_layer->addChild(readyGoPanel);
     //倒计时数字
-    auto readyGoNumber = Sprite::create("/MonsterStart/ReadyGo_1.png");
+    auto readyGoNumber = Sprite::create("/GamePlayScene/ReadyGo_1.png");
     readyGoNumber->setPosition(Vec2(origin.x + visibleSize.width * 0.504,
         origin.y + visibleSize.height / 2));
     time_layer->addChild(readyGoNumber);
     //倒计时转圈
-    auto readyGoing = Sprite::create("/MonsterStart/ReadyGoing.png");
+    auto readyGoing = Sprite::create("/GamePlayScene/ReadyGoing.png");
     readyGoing->setPosition(Vec2(origin.x + visibleSize.width / 2,
         origin.y + visibleSize.height / 2));
     time_layer->addChild(readyGoing);
@@ -84,9 +87,9 @@ void GameMenu::start() {
     readyGoPanel->runAction(Sequence::create(DelayTime::create(3), FadeOut::create(0.1), nullptr));
     //帧动画
     Vector<SpriteFrame*> frame;
-    frame.pushBack(SpriteFrame::create("/MonsterStart/ReadyGo_3.png", Rect(0, 0, 95, 114)));
-    frame.pushBack(SpriteFrame::create("/MonsterStart/ReadyGo_2.png", Rect(0, 0, 95, 114)));
-    frame.pushBack(SpriteFrame::create("/MonsterStart/ReadyGo_1.png", Rect(0, 0, 95, 114)));
+    frame.pushBack(SpriteFrame::create("/GamePlayScene/ReadyGo_3.png", Rect(0, 0, 95, 114)));
+    frame.pushBack(SpriteFrame::create("/GamePlayScene/ReadyGo_2.png", Rect(0, 0, 95, 114)));
+    frame.pushBack(SpriteFrame::create("/GamePlayScene/ReadyGo_1.png", Rect(0, 0, 95, 114)));
     readyGoNumber->runAction(Sequence::create(Animate::create(Animation::createWithSpriteFrames(frame, 1)), FadeOut::create(0.1), nullptr));
     //倒计时的时候所有可用格点闪烁
     Sprite* grid[7][12];
@@ -96,7 +99,7 @@ void GameMenu::start() {
         }
     }
     //出怪倒计时特效
-    auto readyGo = Sprite::create("/MonsterStart/ReadyGo1.png");
+    auto readyGo = Sprite::create("/GamePlayScene/ReadyGo1.png");
     readyGo->setPosition(196, 650);
     this->addChild(readyGo, 0);
     readyGo->setVisible(false); // 初始隐藏
@@ -165,7 +168,7 @@ bool GameMenu::init()
     waves_image->setPosition(Vec2(origin.x + visibleSize.width * 0.4,
         origin.y + visibleSize.height * 0.95 + 12));
     this->addChild(waves_image);
-    auto waves_label = Label::createWithTTF(std::to_string(currentWaves / 10 % 10) + "    " + std::to_string(currentWaves % 10), "/fonts/TMON Monsori.ttf", 38);
+    auto waves_label = Label::createWithTTF(std::to_string(currentWave / 10 % 10) + "    " + std::to_string(currentWave % 10), "/fonts/TMON Monsori.ttf", 38);
     waves_label->setName("WavesLabel");
     waves_label->setColor(Color3B::YELLOW);
     waves_label->setPosition(Vec2(origin.x + visibleSize.width * 0.4,
@@ -204,11 +207,10 @@ bool GameMenu::init()
         }, pause_off, pause_on, nullptr);
     pause_toggle->setPosition(Vec2(Vec2(origin.x + visibleSize.width * 0.7,
         origin.y + visibleSize.height * 0.955)));
-    menu->addChild(pause_toggle);
-    //倒计时
-    start();
+    menu->addChild(pause_toggle);   
+   start();
     //选项
-    auto options_btn = Button::create("/GamePlayScene/touming-hd.pvr_28.PNG", "/GameScene/touming-hd.pvr_26.PNG");
+    auto options_btn = Button::create("/GamePlayScene/touming-hd.pvr_28.PNG", "/GamePlayScene/touming-hd.pvr_26.PNG");
     options_btn->setPosition(Vec2(origin.x + visibleSize.width * 0.8,
         origin.y + visibleSize.height * 0.95 + 5));
     options_btn->addTouchEventListener([this](Ref* psender, Button::TouchEventType type) {
@@ -220,7 +222,8 @@ bool GameMenu::init()
         case Button::TouchEventType::CANCELED:
             break;
         case Button::TouchEventType::ENDED:
-            options();
+          options();
+           
             break;
         }
         });
@@ -229,59 +232,248 @@ bool GameMenu::init()
 }
 //选项:设置界面
 void GameMenu::options() {
-    //获取屏幕大小
+    // 获取屏幕大小
     auto visibleSize = Director::getInstance()->getVisibleSize();
     Vec2 origin = Director::getInstance()->getVisibleOrigin();
+    
     /************************  纯色层  *****************************/
-    isPause = 1;//游戏暂停
+    isPause = 1;  // 游戏暂停
     auto blackLayer = LayerColor::create(Color4B::BLACK);
     blackLayer->setPosition(Vec2::ZERO);
-    blackLayer->setOpacity(90);//不透明度0.9
-    this->addChild(blackLayer, 1);
+    blackLayer->setOpacity(90);  // 不透明度0.9
+    this->addChild(blackLayer, 2);  // 将黑色层添加到第二层，确保在其他内容上方
+
     /************************  事件监听器  *****************************/
     auto listener = EventListenerTouchOneByOne::create();
-    listener->setSwallowTouches(false);  // 不拦截其他触摸事件
-
+    listener->setSwallowTouches(true);  // 确保触摸事件不传递给下层
     listener->onTouchBegan = [blackLayer](Touch* touch, Event* event) {
-        return true;
-        };
+        // 确保返回true来阻止下层的触摸事件
+        return true; 
+    };
     Director::getInstance()->getEventDispatcher()->addEventListenerWithSceneGraphPriority(listener, blackLayer);
+
     /******************  背景  ***************************/
     auto optionsBackground = Sprite::create("/GamePlayScene/options_bg.png");
-    optionsBackground->setPosition(Vec2(origin.x + visibleSize.width / 2,
-        origin.y + visibleSize.height / 2));
-    blackLayer->addChild(optionsBackground);
-    /*******************  菜单  **************************/
+    optionsBackground->setPosition(Vec2(origin.x + visibleSize.width / 2, origin.y + visibleSize.height / 2));
+    
+    blackLayer->getParent()->getParent()->addChild(optionsBackground, 3);  // 添加到第三层
+
+    /*******************  菜单  ***************************/
     auto optionsMenu = Menu::create();
     optionsMenu->setPosition(Vec2::ZERO);
-    blackLayer->addChild(optionsMenu);
-    //继续游戏
+    blackLayer->getParent()->getParent()->addChild(optionsMenu, 3);  // 确保菜单在最上层
+
+    // 继续游戏按钮
     auto continueGame = MenuItemImage::create("/GamePlayScene/resume_normal.png", "/GamePlayScene/resume_selected.png");
     continueGame->setPosition(Vec2(visibleSize.width * 0.492, visibleSize.height * 0.603));
-    continueGame->setCallback([this, blackLayer](Ref* psender) {//按钮回调事件，返回上一级
+    // 继续游戏按钮回调
+    continueGame->setCallback([this, blackLayer, optionsMenu, optionsBackground](Ref* psender) {
+        // 移除黑色层
         this->removeChild(blackLayer);
+
+        // 使用反向迭代器移除菜单中的所有子项
+        auto children = optionsMenu->getChildren();
+        for (auto it = children.rbegin(); it != children.rend(); ++it) {
+            optionsMenu->removeChild(*it, true);  // 第二个参数 true 表示清理资源
+        }
+
+        // 移除背景
+        optionsBackground->removeFromParent();
         isPause = 0;
-        });
-    optionsMenu->addChild(continueGame);
-    //重新开始
+    });
+    optionsMenu->addChild(continueGame, 3);
+   
+    // 重新开始按钮
     auto restartGame = MenuItemImage::create("/GamePlayScene/restart_normal.png", "/GamePlayScene/restart_selected.png");
     restartGame->setPosition(Vec2(visibleSize.width * 0.492, visibleSize.height * 0.513));
-    restartGame->setCallback([this, blackLayer](Ref* psender) {//按钮回调事件，返回上一级
+    restartGame->setCallback([this, blackLayer](Ref* psender) {
         this->removeChildByName("PlayingLevel");
-        
+      
+        // 重新开始游戏时恢复初始状态
+        //重置游戏状态
+
+        // 重新加载游戏场景
+        auto newMapScene = MAP_SCENE::create();
+        newMapScene->initLevel(level);  // 初始化关卡
+        Director::getInstance()->replaceScene(newMapScene);  // 切换到新的场景
+
         isPause = 0;
-        });
-    optionsMenu->addChild(restartGame);
-    //选择关卡
-    auto returnSelect = MenuItemImage::create("/GameScene/return_normal.png", "/GameScene/return_selected.png");
+    });
+    optionsMenu->addChild(restartGame, 3);
+
+    // 选择关卡按钮
+    auto returnSelect = MenuItemImage::create("/GamePlayScene/return_normal.png", "/GamePlayScene/return_selected.png");
     returnSelect->setPosition(Vec2(visibleSize.width * 0.492, visibleSize.height * 0.42));
-    returnSelect->setCallback([this, blackLayer](Ref* psender) {//按钮回调事件，返回上一级
-        });
-    optionsMenu->addChild(returnSelect);
+    returnSelect->setCallback([this, blackLayer](Ref* psender) {
+        // 跳转到 HelloWorld 场景
+        auto helloWorldScene = HelloWorld::createScene();  // 创建 HelloWorld 场景
+        Director::getInstance()->replaceScene(helloWorldScene);  // 替换当前场景
+    });
+    optionsMenu->addChild(returnSelect, 3);
 }
+
+
+
+
+void GameMenu::showLosePopup() {//失败结算画面
+    CCLOG("showLosePopup called");
+    isPause =true; // 停止游戏逻辑
+    /*******************************  数据更新  *****************************/
+   // UserDefault::getInstance()->setIntegerForKey("money_statistics", UserDefault::getInstance()->getIntegerForKey("money_statistics") + coinNumber);
+    //UserDefault::getInstance()->setIntegerForKey("monster_statistics", UserDefault::getInstance()->getIntegerForKey("monster_statistics") + activeMonsters.size());
+    // 添加其他统计更新逻辑...
+
+    /********************************  显示  ******************************/
+    auto visibleSize = Director::getInstance()->getVisibleSize();
+    Vec2 origin = Director::getInstance()->getVisibleOrigin();
+
+    /************************  纯色层  *****************************/
+    auto black_layer = LayerColor::create(Color4B::BLACK);
+    black_layer->setPosition(Vec2::ZERO);
+    black_layer->setOpacity(90);
+ 
+    auto runningScene = Director::getInstance()->getRunningScene();
+    if (runningScene) {
+        runningScene->addChild(black_layer, 2);
+        CCLOG("Black layer added to running scene.");
+    }
+    else {
+        CCLOG("No running scene. Unable to add black layer.");
+    }
+
+    /************************  事件监听器  *****************************/
+    auto listener = EventListenerTouchOneByOne::create();
+    listener->setSwallowTouches(true); // 阻止触摸穿透
+    listener->onTouchBegan = [black_layer](Touch* touch, Event* event) {
+        return true;
+        };
+    Director::getInstance()->getEventDispatcher()->addEventListenerWithSceneGraphPriority(listener, black_layer);
+
+    /******************  背景  ***************************/
+    auto lose_bg = Sprite::create("/GamePlayScene/lose.png");
+    lose_bg->setPosition(Vec2(origin.x + visibleSize.width / 2, origin.y + visibleSize.height / 2));
+    lose_bg->setScale(1.7);
+    black_layer->addChild(lose_bg,2);
+
+    // 当前波数显示
+    auto waves_label = Label::createWithTTF(std::to_string(currentWave / 10 % 10) + "   " + std::to_string(currentWave % 10), "/fonts/Marker Felt.ttf", 32);
+    waves_label->setColor(Color3B::YELLOW);
+    waves_label->setPosition(Vec2(origin.x + visibleSize.width * 0.475+19, origin.y + visibleSize.height * 0.52));
+    black_layer->addChild(waves_label,2);
+
+    // 波数显示
+    auto waves_txt = Label::createWithTTF(std::to_string(allWaves), "/fonts/Marker Felt.ttf", 32);
+    waves_txt->setPosition(Vec2(origin.x + visibleSize.width * 0.58-50, origin.y + visibleSize.height * 0.52));
+    black_layer->addChild(waves_txt,2);
+
+    // 关卡显示
+    auto level_txt = Label::createWithTTF("0" + std::to_string(level), "/fonts/Marker Felt.ttf", 32);
+    level_txt->setPosition(Vec2(origin.x + visibleSize.width * 0.4+50, origin.y + visibleSize.height * 0.43+20));
+    black_layer->addChild(level_txt,2);
+
+    /*******************  菜单  **************************/
+    auto options_menu = Menu::create();
+    options_menu->setPosition(Vec2::ZERO);
+    black_layer->addChild(options_menu,2);
+
+    // 重新开始按钮
+    auto again_btn = MenuItemImage::create("/GamePlayScene/again_normal.png", "/GamePlayScene/again_selected.png");
+    again_btn->setPosition(Vec2(visibleSize.width * 0.6, visibleSize.height * 0.3));
+    again_btn->setCallback([this](Ref* psender) {
+        // button_sound_effect();
+
+        auto newMapScene = MAP_SCENE::create();
+        newMapScene->initLevel(level);  // 初始化关卡
+        Director::getInstance()->replaceScene(newMapScene);  // 切换到新的场景
+        });
+    options_menu->addChild(again_btn,2);
+
+    // 返回关卡选择按钮
+    auto return_btn = MenuItemImage::create("/GamePlayScene/return_normal.png", "/GamePlayScene/return_selected.png");
+    return_btn->setPosition(Vec2(visibleSize.width * 0.35, visibleSize.height * 0.3));
+    return_btn->setCallback([](Ref* psender) {
+        // button_sound_effect();
+        auto helloWorldScene = HelloWorld::createScene();  // 创建 HelloWorld 场景
+        Director::getInstance()->replaceScene(helloWorldScene);  // 替换当前场景
+        });
+    options_menu->addChild(return_btn,2);
+}
+
+void GameMenu::showWinPopup() { //胜利结算画面
+    isPause = true; // 停止游戏逻辑
+    /*******************************  数据更新  *****************************/
+   // UserDefault::getInstance()->setIntegerForKey("money_statistics", UserDefault::getInstance()->getIntegerForKey("money_statistics") + coinNumber);
+   // UserDefault::getInstance()->setIntegerForKey("adventure_statistics", level + 1);
+    // 添加其他统计更新逻辑...
+
+    /********************************  显示  ******************************/
+    auto visibleSize = Director::getInstance()->getVisibleSize();
+    Vec2 origin = Director::getInstance()->getVisibleOrigin();
+
+    /************************  纯色层  *****************************/
+    auto black_layer = LayerColor::create(Color4B::BLACK);
+    black_layer->setPosition(Vec2::ZERO);
+    black_layer->setOpacity(90);
+    Director::getInstance()->getRunningScene()->addChild(black_layer, 1);
+
+    /************************  事件监听器  *****************************/
+    auto listener = EventListenerTouchOneByOne::create();
+    listener->setSwallowTouches(true);
+    listener->onTouchBegan = [black_layer](Touch* touch, Event* event) {
+        return true;
+        };
+    Director::getInstance()->getEventDispatcher()->addEventListenerWithSceneGraphPriority(listener, black_layer);
+
+    /******************  背景  ***************************/
+    auto win_bg = Sprite::create("/GamePlayScene/win.png");
+    win_bg->setPosition(Vec2(origin.x + visibleSize.width / 2, origin.y + visibleSize.height / 2));
+    win_bg->setScale(1.7);
+    black_layer->addChild(win_bg);
+
+
+    // 当前波数显示
+    auto waves_label = Label::createWithTTF(std::to_string(currentWave / 10 % 10) + "   " + std::to_string(currentWave % 10), "/fonts/Marker Felt.ttf", 32);
+    waves_label->setColor(Color3B::YELLOW);
+    waves_label->setPosition(Vec2(origin.x + visibleSize.width * 0.475 + 19, origin.y + visibleSize.height * 0.52-10));
+    black_layer->addChild(waves_label, 2);
+
+    // 波数显示
+    auto waves_txt = Label::createWithTTF(std::to_string(allWaves), "/fonts/Marker Felt.ttf", 32);
+    waves_txt->setPosition(Vec2(origin.x + visibleSize.width * 0.58 - 50, origin.y + visibleSize.height * 0.52-10));
+    black_layer->addChild(waves_txt, 2);
+
+    // 关卡显示
+    auto level_txt = Label::createWithTTF("0" + std::to_string(level), "/fonts/Marker Felt.ttf", 32);
+    level_txt->setPosition(Vec2(origin.x + visibleSize.width * 0.4 + 50, origin.y + visibleSize.height * 0.43 + 20));
+    black_layer->addChild(level_txt, 2);
+
+    /*******************  菜单  **************************/
+    auto options_menu = Menu::create();
+    options_menu->setPosition(Vec2::ZERO);
+    black_layer->addChild(options_menu, 2);
+
+    // 返回关卡选择按钮
+    auto return_btn = MenuItemImage::create("/GamePlayScene/return_normal.png", "/GamePlayScene/return_selected.png");
+    return_btn->setPosition(Vec2(visibleSize.width * 0.48, visibleSize.height * 0.35));
+    return_btn->setCallback([](Ref* psender) {
+        // button_sound_effect();
+        auto helloWorldScene = HelloWorld::createScene();  // 创建 HelloWorld 场景
+        Director::getInstance()->replaceScene(helloWorldScene);  // 替换当前场景
+        });
+    options_menu->addChild(return_btn, 2);
+}
+
+
+
+
+
 /*********************************************************/
 
 
+
+
+//游戏界面类
+/*********************************************************/
 MAP_SCENE::MAP_SCENE()
     : background(nullptr)
 {
@@ -299,6 +491,7 @@ MAP_SCENE* MAP_SCENE::create()
     MAP_SCENE* ret = new MAP_SCENE();
     if (ret && ret->init())
     {
+
         ret->autorelease();
         return ret;
     }
@@ -311,83 +504,15 @@ MAP_SCENE* MAP_SCENE::create()
 
 
 
-bool MAP_SCENE::init()
-{
-    if (!Scene::init())
-    {
+// 初始化方法
+bool MAP_SCENE::init() {
+    // 调用父类的 init
+    if (!Scene::init()) {
         return false;
     }
 
-    // 基本初始化，比如添加背景
-
-    // 获取屏幕大小
-    auto visibleSize = Director::getInstance()->getVisibleSize();
-    Vec2 origin = Director::getInstance()->getVisibleOrigin();
-
-
-
-    background = cocos2d::Sprite::create("GamePlayScene/map1.png");//先写死第一张地图 ，如何选择第几张地图待修改
-   if (background == nullptr)
-    {
-        // problemLoading("'menu.png'");
-    }
-    else
-    {
-        // position the sprite on the center of the screen
-        background->setPosition(Vec2(visibleSize.width / 2 + origin.x, visibleSize.height / 2 + origin.y));
-
-
-        background->setContentSize(Size(1536, 1024)); // 设置为1536x1024的大小
-
-
-        // add the sprite as a child to this layer
-        this->addChild(background, 0);//背景层级为0，确保它在最底层
-
-        //  菜单层  
-        /*
-        auto menu_layer = GameMenu::createLayer();
-        menu_layer->setName("GameMenu");
-        this->addChild(menu_layer, 2);
-        */
-    }
-
-
-
-  
-    
-
-    initializeMapArray(0);
-    // 创建触摸事件监听器
-    auto listener1 = EventListenerTouchOneByOne::create();
-
-    // 触摸开始时的回调函数
-    listener1->onTouchBegan = [=](Touch* touch, Event* event) {
-        Vec2 touchLocation = touch->getLocation();
-        array arr = vec2_to_array(touchLocation);
-        handleMapAction(arr.row, arr.col);
-        return true; // 返回true表示吞噬该事件，其他地方不再处理
-        };
-
-    // 触摸移动时的回调函数
-   /*listener1->onTouchMoved = [=](Touch* touch, Event* event) {
-        Vec2 touchLocation = touch->getLocation();
-        array arr = vec2_to_array(touchLocation);
-
-        // 实时反馈，可能需要展示提示，或者改变目标位置的状态
-        // 比如给玩家显示一个“不能放置塔”的提示
-        showBuildFeedback(arr.row, arr.col);
-        };*/
-
-        // 触摸结束时的回调函数
-    listener1->onTouchEnded = [=](Touch* touch, Event* event) {
-        // 触摸结束，确保放置塔
-        Vec2 touchLocation = touch->getLocation();
-        array arr = vec2_to_array(touchLocation);
-        handleMapAction(arr.row, arr.col);
-        showBuildFeedback(arr.row, arr.col);
-        };
-
-    _eventDispatcher->addEventListenerWithSceneGraphPriority(listener1, this);
+    // 初始化场景的默认内容
+    CCLOG("MAP_SCENE default init completed.");
 
     return true;
 }
@@ -451,7 +576,7 @@ void MAP_SCENE::handleMapAction(int row, int col)
     // 如果未选择防御塔，禁止其他交互
     if (!isTowerSelected)
     {
-        cocos2d::log("请先选择一个防御塔！");
+        cocos2d::log("请先选择一个防御塔");
         return;
     }
 
@@ -461,20 +586,20 @@ void MAP_SCENE::handleMapAction(int row, int col)
     // 根据点击的位置处理逻辑
     if (mapGrid[row][col] == BARRIER)
     {
-        cocos2d::log("无法放置塔，位置被障碍物占用！");
+        cocos2d::log("无法放置塔，位置被障碍物占用");
     }
     else if (mapGrid[row][col] == EXISTED_TOWER)
     {
-        cocos2d::log("该位置已有塔！");
+        cocos2d::log("该位置已有塔");
     }
     else if (mapGrid[row][col] == PATH)
     {
-        cocos2d::log("该位置为路径，不能放置塔！");
+        cocos2d::log("该位置为路径，不能放置塔");
     }
     else if (mapGrid[row][col] == SPACE)
     {
         //map[row][col] = EXISTED_TOWER;
-        cocos2d::log("放置了防御塔！");
+        cocos2d::log("放置了防御塔");
     }
 
 }
@@ -493,27 +618,26 @@ void MAP_SCENE::handleTowerClick(int row, int col)
     if (auto bottleTower = dynamic_cast<BottleTower*>(tower))
     {
         // 如果是 BottleTower 类型的塔
-        cocos2d::log("点击了 BottleTower!");
+        cocos2d::log("点击了 BottleTower");
         // 处理 BottleTower 的相关逻辑
     }
     else if (auto shitTower = dynamic_cast<ShitTower*>(tower))
     {
         // 如果是 ShitTower 类型的塔
-        cocos2d::log("点击了 ShitTower!");
+        cocos2d::log("点击了 ShitTower");
         // 处理 ShitTower 的相关逻辑
     }
     else if (auto sunflowerTower = dynamic_cast<SunflowerTower*>(tower))
     {
         // 如果是 SunflowerTower 类型的塔
-        cocos2d::log("点击了 SunflowerTower!");
+        cocos2d::log("点击了 SunflowerTower");
         // 处理 SunflowerTower 的相关逻辑
     }
     else
     {
-        cocos2d::log("该塔不是已知类型!");
+        cocos2d::log("该塔不是已知类型");
     }
 }
-
 
 
 
@@ -532,8 +656,14 @@ void MAP_SCENE::addTowerPreview(int row, int col)
     float startY = array_to_vec2(row, col).y;
 
     // 偏移量：确保按钮不会与grid重叠
-    float offsetXForPreview = startX - 128;  // 将按钮稍微向右偏移
-    float offsetYForPreview = startY + 64;  // 将按钮稍微向下偏移
+    float offsetXForPreview = startX - 64;  // 默认偏移量
+    float offsetYForPreview = startY + 64;  // 垂直位置稍微偏移
+
+    // 特判：如果是点击最左边第一列，调整按钮位置
+    if (col == 0)
+    {
+        offsetXForPreview += 64;  // 增加偏移量，确保按钮不会被遮挡
+    }
 
     // 计算按钮位置，防止超出屏幕范围
     int screenWidth = 12;  // 地图的列数
@@ -565,13 +695,13 @@ void MAP_SCENE::addTowerPreview(int row, int col)
 
             // 按钮点击事件
             button->addClickEventListener([this, i, row, col](Ref* sender) {
-                //isTowerSelected = true;  // 更新状态
                 onTowerPreviewClicked(i, row, col);  // 处理点击逻辑
                 });
-
         }
     }
 }
+
+
 
 void MAP_SCENE::onTowerPreviewClicked(int towerIndex, int row, int col)
 {
@@ -585,11 +715,11 @@ void MAP_SCENE::onTowerPreviewClicked(int towerIndex, int row, int col)
         tower = BottleTower::create("GamePlayScene/bottle_level_1.png");
         break;
     case 1:
-        // 创建 ShitTower 实例（假设你有这个塔类）
+        // 创建 ShitTower 
         tower = ShitTower::create("GamePlayScene/shit_level_1.png");
         break;
     case 2:
-        // 创建 SunflowerTower 实例（假设你有这个塔类）
+        // 创建 SunflowerTower 
         tower = SunflowerTower::create("GamePlayScene/sunflower_level_1.png");
         break;
     default:
@@ -617,8 +747,6 @@ void MAP_SCENE::onTowerPreviewClicked(int towerIndex, int row, int col)
 }
 
 
-
-
 void MAP_SCENE::clearWarningSprites()
 {
     for (auto sprite : warningSprites)
@@ -627,6 +755,7 @@ void MAP_SCENE::clearWarningSprites()
     }
     warningSprites.clear();  // 清空列表
 }
+
 ui::Button* currentUpgradeButton = nullptr;  // 全局变量，用于记录当前的升级按钮
 ui::Button* currentDeleteButton = nullptr;  // 全局变量，用于记录当前的删除按钮
 void MAP_SCENE::updateordeleteTowerPreview(int row, int col)
@@ -762,6 +891,7 @@ void MAP_SCENE::updateordeleteTowerPreview(int row, int col)
 }
 
 
+
 void MAP_SCENE::deleteTower(int row, int col)
 {
     // 获取指定位置的塔对象
@@ -822,32 +952,102 @@ void  MAP_SCENE::initLevel(int level)// 初始化关卡的方法
     std::string backgroundImage;
     switch (level) {
     case 0:
-        backgroundImage = "map1.png";
+        backgroundImage = "/GamePlayScene/map1.png";
         setBackground(backgroundImage);
-       
 
         break;
     case 1:
-        backgroundImage = "map2.png";
+        backgroundImage ="/GamePlayScene/map2.png";
         setBackground(backgroundImage);
-        
-
         break;
     case 2:
-        backgroundImage = "map3.png";
+        backgroundImage = "/GamePlayScene/map3.png";
         setBackground(backgroundImage);
-
         break;
     default:
         backgroundImage = "default_background.png";
         setBackground(backgroundImage);
         break;
     }
-    // initTowers(level);初始化防御塔位置
-    initializeMapArray(level);//地图数组(路径) 
-    //initResources(); 初始化游戏资源
+    initializeMapArray(level);
 
+   
+    //initResources(); 初始化游戏资源
+    
+    // 设置游戏层的名字
+    this->setName("PlayingLevel");  // 设置当前层的名字
+     // 添加游戏菜单到场景
+    auto menuLayer = GameMenu::createLayer();
+    if (menuLayer) {
+        menuLayer->setName("GameMenu");
+        this->addChild(menuLayer, 1); // 添加到较高的层级，以确保在地图上方显示
+    }
+  
+    auto delay = DelayTime::create(5.0f);
+
+    // 创建一个延时6秒的动作执行怪物创建
+    auto createMonsters = CallFunc::create([this, level]() {  // 显式捕获 `level`
+        // 创建 MonsterCreate 实例
+        auto monster_create = MonsterCreate::create();
+        monster_create->MonsterWaves(level);  // 使用捕获的 `level`
+        this->addChild(monster_create, 100);
+        });
+
+    auto sequence = Sequence::create(delay, createMonsters, nullptr);
+    this->runAction(sequence);
+
+       
+    
+
+
+    // 创建触摸事件监听器
+    auto listener1 = EventListenerTouchOneByOne::create();
+
+    // 触摸开始时的回调函数
+    listener1->onTouchBegan = [=](Touch* touch, Event* event) {
+        Vec2 touchLocation = touch->getLocation();
+        array arr = vec2_to_array(touchLocation);
+        handleMapAction(arr.row, arr.col);
+        return true; // 返回true表示吞噬该事件，其他地方不再处理
+        };
+        // 触摸结束时的回调函数
+    listener1->onTouchEnded = [=](Touch* touch, Event* event) {
+        // 触摸结束，确保放置塔
+        Vec2 touchLocation = touch->getLocation();
+        array arr = vec2_to_array(touchLocation);
+        // 检查是否点击到了怪物
+        Monster* clickedMonster = checkMonsterClicked(touchLocation);
+        // 如果点击到怪物，则不执行后续操作
+        if (clickedMonster != nullptr) {
+            // 点击到怪物，做相应处理（例如，可以高亮显示怪物、处理怪物的其他操作）
+        
+            CCLOG("Clicked on monster: %p", clickedMonster);
+            return;  // 返回，不再执行后续的塔放置操作
+        }
+
+        // 如果没有点击到怪物，执行地图操作和放置塔
+        handleMapAction(arr.row, arr.col);
+        showBuildFeedback(arr.row, arr.col);
+        };
+   
+    _eventDispatcher->addEventListenerWithSceneGraphPriority(listener1, this);
 }
+
+
+
+// 检查是否点击到怪物，并返回被点击的怪物指针
+Monster* MAP_SCENE::checkMonsterClicked(Vec2 touchLocation) {
+    for (auto monster : monsters) {
+        if (monster->getBoundingBox().containsPoint(touchLocation)) {
+            // 点击到了怪物，返回怪物的指针
+            CCLOG("Clicked on monster at position: (%f, %f)", monster->getPositionX(), monster->getPositionY());
+            return monster;  // 返回点击到的怪物
+        }
+    }
+    return nullptr;  // 没有点击到怪物，返回 nullptr
+}
+
+
 void MAP_SCENE::setBackground(const std::string& backgroundImage) {
 
     // 获取屏幕大小
@@ -867,6 +1067,7 @@ void MAP_SCENE::setBackground(const std::string& backgroundImage) {
         // add the sprite as a child to this layer
         this->addChild(background, 0);//背景层级为0，确保它在最底层
     }
+
 }
 
 
@@ -886,6 +1087,9 @@ void MAP_SCENE::onEnterGame() {
 
 void MAP_SCENE::initializeMapArray(int level) {
      barrierManager = BarrierManager::create();
+     for (int i = 0; i < 12; i++) {
+         mapGrid[0][i] = MENU;
+     }
     switch (level) {
     case 0:
         
@@ -900,7 +1104,7 @@ void MAP_SCENE::initializeMapArray(int level) {
         barrierManager->BarrierAppear(BARRIER_4_2, 1024, 768, 4);
 
        this->addChild(barrierManager);
-        //barrierManager->createMouseEventListener();
+       // barrierManager->createMouseEventListener();
         //map1
         mapGrid[2][1] = PATH;   // (2, 3) 是路径
         mapGrid[3][1] = PATH;
@@ -1030,20 +1234,39 @@ void MAP_SCENE::initializeMapArray(int level) {
         break;
 
     case 2:
-        // 添加不同位置和类型的障碍物
-        barrierManager->BarrierAppear(BARRIER_1_1, 836, 832, 1);
-        barrierManager->BarrierAppear(BARRIER_1_1, 836, 192, 1);
-        barrierManager->BarrierAppear(BARRIER_1_1, 964, 192, 1);
-        barrierManager->BarrierAppear(BARRIER_1_2, 320, 448, 1);
-        barrierManager->BarrierAppear(BARRIER_1_2, 448, 448, 1);
-        barrierManager->BarrierAppear(BARRIER_1_2, 1216, 192, 1);
-        barrierManager->BarrierAppear(BARRIER_1_2, 1088, 832, 1);
-        barrierManager->BarrierAppear(BARRIER_1_2, 832, 576, 1);
-        barrierManager->BarrierAppear(BARRIER_2_1, 512, 192, 2);
-        barrierManager->BarrierAppear(BARRIER_2_2, 640, 448, 2);
-        barrierManager->BarrierAppear(BARRIER_4_1, 1024, 512, 4);
-        barrierManager->BarrierAppear(BARRIER_4_2, 1408, 512, 4);
-        barrierManager->BarrierAppear(BARRIER_4_2, 384, 768, 4);
+       
+            // 添加不同位置和类型的障碍物
+            barrierManager->BarrierAppear(BARRIER_1_1, 64, 832, 1);
+            barrierManager->BarrierAppear(BARRIER_1_1, 192, 832, 1);
+            barrierManager->BarrierAppear(BARRIER_1_2, 320, 832, 1);
+            barrierManager->BarrierAppear(BARRIER_1_1, 448, 832, 1);
+            barrierManager->BarrierAppear(BARRIER_1_2, 576, 832, 1);
+            barrierManager->BarrierAppear(BARRIER_1_2, 960, 832, 1);
+            barrierManager->BarrierAppear(BARRIER_1_2, 1088, 832, 1);
+            barrierManager->BarrierAppear(BARRIER_1_1, 1472, 832, 1);
+            barrierManager->BarrierAppear(BARRIER_2_1, 1280, 832, 2);
+            barrierManager->BarrierAppear(BARRIER_1_2, 832, 448, 1);
+            barrierManager->BarrierAppear(BARRIER_1_2, 64, 704, 1);
+            barrierManager->BarrierAppear(BARRIER_1_1, 64, 576, 1);
+            barrierManager->BarrierAppear(BARRIER_1_2, 1472, 704, 1);
+            barrierManager->BarrierAppear(BARRIER_1_1, 1472, 576, 1);
+            barrierManager->BarrierAppear(BARRIER_1_2, 1472, 448, 1);
+            barrierManager->BarrierAppear(BARRIER_1_1, 1472, 320, 1);
+            barrierManager->BarrierAppear(BARRIER_1_2, 1472, 192, 1);
+            barrierManager->BarrierAppear(BARRIER_1_1, 1344, 192, 1);
+            barrierManager->BarrierAppear(BARRIER_1_2, 960, 64, 1);
+            barrierManager->BarrierAppear(BARRIER_1_1, 832, 64, 1);
+            barrierManager->BarrierAppear(BARRIER_2_1, 512, 704, 2);
+            barrierManager->BarrierAppear(BARRIER_2_1, 1152, 64, 2);
+            barrierManager->BarrierAppear(BARRIER_2_1, 768, 320, 2);
+            barrierManager->BarrierAppear(BARRIER_2_2, 512, 576, 2);
+            barrierManager->BarrierAppear(BARRIER_4_1, 128, 384, 4);
+            barrierManager->BarrierAppear(BARRIER_4_1, 512, 256, 4);
+            barrierManager->BarrierAppear(BARRIER_4_1, 1152, 512, 4);
+            barrierManager->BarrierAppear(BARRIER_4_2, 768, 768, 4);
+            barrierManager->BarrierAppear(BARRIER_4_2, 256, 640, 4);
+           
+        
 
        this->addChild(barrierManager);
        //barrierManager->createMouseEventListener();
@@ -1126,3 +1349,5 @@ void MAP_SCENE::initializeMapArray(int level) {
 
     }
 }
+
+
