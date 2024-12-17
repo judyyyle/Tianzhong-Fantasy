@@ -6,11 +6,15 @@
 #include<vector>
 #include"Tower.h"
 #include "BarrierAppear.h"
+#include"monster.h"
 //宏定义
+
+#define MENU -2
 #define PATH -1
 #define SPACE 0
 #define BARRIER 1
 #define EXISTED_TOWER 2
+
 
 #define BARRIER_1_1 0
 #define BARRIER_1_2 1
@@ -21,6 +25,7 @@
 
 extern int mapGrid[8][12];  
 
+class Monster;
 class MAP_SCENE : public cocos2d::Scene
 {
 public:
@@ -32,9 +37,7 @@ public:
 
     // 初始化方法，子类可以重写
     bool init() override;
-
-    // 用于初始化地图（子类重写此方法）
-    void initializeMap();
+    Monster* checkMonsterClicked(Vec2 touchLocation);
     void initializeMapArray(int level);
     void onTouchBegan(cocos2d::Touch* touch, cocos2d::Event* event);
     void showBuildFeedback(int row, int col);
@@ -56,7 +59,6 @@ public:
     void createMouseEventListener();
 protected:
     cocos2d::Sprite* background;  // 背景
-       // 地图状态数组
     bool isTowerSelected = false; // 是否已选择防御塔
     std::vector<Node*> warningSprites; // 存储提示图片和按钮
     // 处理地图上不同位置的行为
@@ -72,9 +74,12 @@ public:
     static cocos2d::Layer* createLayer();
     virtual bool init();
     CREATE_FUNC(GameMenu);
+    void start();
     //选项
     void options();
-    void start();
+    void showLosePopup();
+    void showWinPopup();
+
 };
 
 #endif // __MAP_H__
