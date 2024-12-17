@@ -74,7 +74,7 @@ public:
     CREATE_FUNC(GameMenu);
     //选项
     void options();
-
+    void start();
 };
 
 #endif // __MAP_H__
