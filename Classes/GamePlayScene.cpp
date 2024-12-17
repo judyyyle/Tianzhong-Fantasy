@@ -14,7 +14,7 @@ USING_NS_CC;
 using namespace cocos2d::ui;
 // 在 MAP_SCENE 类中，添加一个成员变量来保存提示图标
 int mapGrid[8][12];
-int Level = 1;
+int level;
 /**********************  全局变量  ***********************/
 //关卡选项
 
@@ -57,7 +57,79 @@ Layer* GameMenu::createLayer() {
     }
     return layer;
 }
+//倒计时特效
+void GameMenu::start() {
+    auto visibleSize = Director::getInstance()->getVisibleSize();
+    Vec2 origin = Director::getInstance()->getVisibleOrigin();
 
+    //倒计时页
+    auto time_layer = Layer::create();
+    this->addChild(time_layer);
+    //倒计时背景盘
+    auto readyGoPanel = Sprite::create("/GameScene/ReadyGoPanel.png");
+    readyGoPanel->setPosition(Vec2(origin.x + visibleSize.width / 2,
+        origin.y + visibleSize.height / 2));
+    time_layer->addChild(readyGoPanel);
+    //倒计时数字
+    auto readyGoNumber = Sprite::create("/MonsterStart/ReadyGo_1.png");
+    readyGoNumber->setPosition(Vec2(origin.x + visibleSize.width * 0.504,
+        origin.y + visibleSize.height / 2));
+    time_layer->addChild(readyGoNumber);
+    //倒计时转圈
+    auto readyGoing = Sprite::create("/MonsterStart/ReadyGoing.png");
+    readyGoing->setPosition(Vec2(origin.x + visibleSize.width / 2,
+        origin.y + visibleSize.height / 2));
+    time_layer->addChild(readyGoing);
+    readyGoing->runAction(Sequence::create(Repeat::create(RotateBy::create(1, -360), 3), FadeOut::create(0.1), nullptr));
+    readyGoPanel->runAction(Sequence::create(DelayTime::create(3), FadeOut::create(0.1), nullptr));
+    //帧动画
+    Vector<SpriteFrame*> frame;
+    frame.pushBack(SpriteFrame::create("/MonsterStart/ReadyGo_3.png", Rect(0, 0, 95, 114)));
+    frame.pushBack(SpriteFrame::create("/MonsterStart/ReadyGo_2.png", Rect(0, 0, 95, 114)));
+    frame.pushBack(SpriteFrame::create("/MonsterStart/ReadyGo_1.png", Rect(0, 0, 95, 114)));
+    readyGoNumber->runAction(Sequence::create(Animate::create(Animation::createWithSpriteFrames(frame, 1)), FadeOut::create(0.1), nullptr));
+    //倒计时的时候所有可用格点闪烁
+    Sprite* grid[7][12];
+    for (int i = 0; i < 7; i++) {
+        for (int j = 0; j < 12; j++) {
+            grid[i][j] = static_cast<Sprite*>(this->getChildByTag(i * 100 + j));
+        }
+    }
+    //出怪倒计时特效
+    auto readyGo = Sprite::create("/MonsterStart/ReadyGo1.png");
+    readyGo->setPosition(196, 650);
+    this->addChild(readyGo, 0);
+    readyGo->setVisible(false); // 初始隐藏
+    //帧动画
+    Vector<SpriteFrame*> frame1;
+    if (level == 0) {
+        frame1.pushBack(SpriteFrame::create("/MonsterStart/ReadyGo1.png", Rect(0, 0, 200, 260)));
+        frame1.pushBack(SpriteFrame::create("/MonsterStart/ReadyGo2.png", Rect(0, 0, 200, 260)));
+        frame1.pushBack(SpriteFrame::create("/MonsterStart/ReadyGo3.png", Rect(0, 0, 200, 260)));
+    }
+    else if (level == 1) {
+        frame1.pushBack(SpriteFrame::create("/MonsterStart/1.png", Rect(30, -90, 200, 260)));
+        frame1.pushBack(SpriteFrame::create("/MonsterStart/2.png", Rect(30, -90, 200, 260)));
+        frame1.pushBack(SpriteFrame::create("/MonsterStart/3.png", Rect(30, -90, 200, 260)));
+    }
+    else if (level == 2) {
+        frame1.pushBack(SpriteFrame::create("/MonsterStart/1.png", Rect(-400, -310, 700, 450)));
+        frame1.pushBack(SpriteFrame::create("/MonsterStart/2.png", Rect(-400, -310, 700, 450)));
+        frame1.pushBack(SpriteFrame::create("/MonsterStart/3.png", Rect(-400, -310, 700, 450)));
+    }
+    //动画
+    auto animation = Animate::create(Animation::createWithSpriteFrames(frame1, 1.0f)); // 每帧1秒
+    auto sequence = Sequence::create(
+        DelayTime::create(3.0f), // 延迟3秒
+        CallFunc::create([readyGo]() {
+            readyGo->setVisible(true); // 3秒后显示精灵
+            }),
+        animation,               // 播放动画
+        FadeOut::create(0.1f),   // 动画完成后淡出
+        nullptr
+    );
+    readyGo->runAction(sequence);
+}
 //初始化
 bool GameMenu::init()
 {
@@ -133,6 +205,8 @@ bool GameMenu::init()
     pause_toggle->setPosition(Vec2(Vec2(origin.x + visibleSize.width * 0.7,
         origin.y + visibleSize.height * 0.955)));
     menu->addChild(pause_toggle);
+    //倒计时
+    start();
     //选项
     auto options_btn = Button::create("/GamePlayScene/touming-hd.pvr_28.PNG", "/GameScene/touming-hd.pvr_26.PNG");
     options_btn->setPosition(Vec2(origin.x + visibleSize.width * 0.8,
