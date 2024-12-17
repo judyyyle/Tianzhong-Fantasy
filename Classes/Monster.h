@@ -268,3 +268,87 @@ public:
         }
     }
 };
+//用于管理萝卜的血量和形象更新
+class Carrot : public Node {
+public:
+    // 创建一个实例
+    CREATE_FUNC(Carrot);
+
+    // 萝卜形象图片数组
+    std::string picture[10] = {
+        "/Carrot/HP_MAX.png",
+        "/Carrot/HP_1.png", "/Carrot/HP_2.png", "/Carrot/HP_3.png",
+        "/Carrot/HP_4.png", "/Carrot/HP_5-6.png", "/Carrot/HP_5-6.png",
+        "/Carrot/HP_7-8.png", "/Carrot/HP_9.png", "/Carrot/HP_MAX.png"
+    };
+
+    // 初始化萝卜的显示
+    bool init() override {
+        if (!Node::init()) {
+            return false;
+        }
+        if (level == 0){
+            // 初始化萝卜血量背景板
+            auto carrot_hp = Sprite::create("/Carrot/Hp.png");
+            carrot_hp->setContentSize(Size(96, 48));
+            carrot_hp->setPosition(1452, 760);
+            this->addChild(carrot_hp, 0);
+            // 初始化萝卜形象
+            auto carrot = Sprite::create("/Carrot/HP_MAX.png");
+            carrot->setContentSize(Size(96, 142));
+            carrot->setPosition(1360, 768);
+            carrot->setName("carrot");
+            this->addChild(carrot, 0);
+
+            // 初始化萝卜血量数值
+            auto carrot_hp_number = Label::createWithTTF(std::to_string(carrotHP), "/fonts/TMON Monsori.ttf", 28);
+            carrot_hp_number->setTextColor(Color4B::YELLOW);
+            carrot_hp_number->setName("HpNumber");
+            carrot_hp_number->setPosition(1467, 760);
+            this->addChild(carrot_hp_number);
+        }
+        else if (level == 1) {
+            // 初始化萝卜血量背景板
+            auto carrot_hp = Sprite::create("/Carrot/Hp.png");
+            carrot_hp->setContentSize(Size(96, 48));
+            carrot_hp->setPosition(1324, 760);
+            this->addChild(carrot_hp, 0);
+            // 初始化萝卜形象
+            auto carrot = Sprite::create("/Carrot/HP_MAX.png");
+            carrot->setContentSize(Size(96, 142));
+            carrot->setPosition(1232, 768);
+            carrot->setName("carrot");
+            this->addChild(carrot, 0);
+
+            // 初始化萝卜血量数值
+            auto carrot_hp_number = Label::createWithTTF(std::to_string(carrotHP), "/fonts/TMON Monsori.ttf", 28);
+            carrot_hp_number->setTextColor(Color4B::YELLOW);
+            carrot_hp_number->setName("HpNumber");
+            carrot_hp_number->setPosition(1339, 760);
+            this->addChild(carrot_hp_number);
+        }
+
+        return true;
+    }
+
+    // 更新萝卜形象和血量显示
+    void updateDisplay() {
+        // 确保从场景中获取到的子节点是指针类型
+        auto carrot = dynamic_cast<Sprite*>(this->getChildByName("carrot"));
+        auto carrot_hp_label = dynamic_cast<Label*>(this->getChildByName("HpNumber"));
+
+        // 检查是否成功获取萝卜和血量标签
+        if (!carrot || !carrot_hp_label) {
+            CCLOG("Failed to find carrot or HpNumber label!");
+            return;
+        }
+
+        // 更新萝卜形象
+        if (carrotHP >= 0 && carrotHP < 10) {
+            carrot->setTexture(picture[carrotHP]);
+        }
+
+        // 更新血量显示
+        carrot_hp_label->setString(std::to_string(carrotHP));
+    }
+};
