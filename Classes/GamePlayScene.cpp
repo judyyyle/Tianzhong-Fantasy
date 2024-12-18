@@ -25,8 +25,9 @@ int allWaves = 20;//总的波数
 int currentWave = 14;//当前怪物的波数
 int carrotHP = 10;//记录萝卜的血量
 int coinNumber = 1234;//记录当前金币的数量
-
+Carrot* globalCarrot = nullptr;//萝卜
  std::vector<Monster*> monsters;
+
 
 //世界坐标与数组的转换
 static struct array {
@@ -982,6 +983,10 @@ void  MAP_SCENE::initLevel(int level)// 初始化关卡的方法
         menuLayer->setName("GameMenu");
         this->addChild(menuLayer, 1); // 添加到较高的层级，以确保在地图上方显示
     }
+
+    //萝卜
+    globalCarrot = Carrot::create();
+    this->addChild(globalCarrot);  // 将 Carrot 实例添加到场景中
   
     auto delay = DelayTime::create(5.0f);
 
@@ -996,13 +1001,8 @@ void  MAP_SCENE::initLevel(int level)// 初始化关卡的方法
     auto sequence = Sequence::create(delay, createMonsters, nullptr);
     this->runAction(sequence);
 
-       
-    
-
-
     // 创建触摸事件监听器
     auto listener1 = EventListenerTouchOneByOne::create();
-
     // 触摸开始时的回调函数
     listener1->onTouchBegan = [=](Touch* touch, Event* event) {
         Vec2 touchLocation = touch->getLocation();
@@ -1019,15 +1019,17 @@ void  MAP_SCENE::initLevel(int level)// 初始化关卡的方法
         Monster* clickedMonster = checkMonsterClicked(touchLocation);
         // 如果点击到怪物，则不执行后续操作
         if (clickedMonster != nullptr) {
+            clickedMonster->selected = true;
+            barrierManager->deselectBarrier();  // 取消之前的选中障碍物        
             // 点击到怪物，做相应处理（例如，可以高亮显示怪物、处理怪物的其他操作）
-        
             CCLOG("Clicked on monster: %p", clickedMonster);
             return;  // 返回，不再执行后续的塔放置操作
         }
-
-        // 如果没有点击到怪物，执行地图操作和放置塔
-        handleMapAction(arr.row, arr.col);
-        showBuildFeedback(arr.row, arr.col);
+        else{
+            // 如果没有点击到怪物，执行地图操作和放置塔
+            handleMapAction(arr.row, arr.col);
+            showBuildFeedback(arr.row, arr.col);
+        }
         };
    
     _eventDispatcher->addEventListenerWithSceneGraphPriority(listener1, this);
@@ -1061,10 +1063,8 @@ void MAP_SCENE::setBackground(const std::string& backgroundImage) {
     }
     else
     {
-        // position the sprite on the center of the screen
         background->setPosition(Vec2(visibleSize.width / 2 + origin.x, visibleSize.height / 2 + origin.y));
         background->setContentSize(Size(1536, 1024)); // 设置为1536x1024的大小
-        // add the sprite as a child to this layer
         this->addChild(background, 0);//背景层级为0，确保它在最底层
     }
 
@@ -1086,10 +1086,11 @@ void MAP_SCENE::onEnterGame() {
 }*/
 
 void MAP_SCENE::initializeMapArray(int level) {
-     barrierManager = BarrierManager::create();
+   
      for (int i = 0; i < 12; i++) {
          mapGrid[0][i] = MENU;
      }
+     barrierManager =BarrierManager::create();
     switch (level) {
     case 0:
         
