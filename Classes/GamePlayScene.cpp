@@ -49,7 +49,268 @@ static array vec2_to_array(Vec2 vec) { //返回array类型，即数组
     return arr;
 }
 
-void GameMenu::showLosePopup() {//失败结算画面
+/*********************  GameMenu  ************************/
+Layer* GameMenu::createLayer() {
+    auto layer = GameMenu::create();
+    if (layer == nullptr) {
+        CCLOG("Failed to create GameMenu layer");
+        return nullptr;
+    }
+    return layer;
+}
+//倒计时特效
+void GameMenu::start() {
+    auto visibleSize = Director::getInstance()->getVisibleSize();
+    Vec2 origin = Director::getInstance()->getVisibleOrigin();
+
+    //倒计时页
+    auto time_layer = Layer::create();
+    this->addChild(time_layer);
+    //倒计时背景盘
+    auto readyGoPanel = Sprite::create("/GamePlayScene/ReadyGoPanel.png");
+    readyGoPanel->setPosition(Vec2(origin.x + visibleSize.width / 2,
+        origin.y + visibleSize.height / 2));
+    time_layer->addChild(readyGoPanel);
+    //倒计时数字
+    auto readyGoNumber = Sprite::create("/GamePlayScene/ReadyGo_1.png");
+    readyGoNumber->setPosition(Vec2(origin.x + visibleSize.width * 0.504,
+        origin.y + visibleSize.height / 2));
+    time_layer->addChild(readyGoNumber);
+    //倒计时转圈
+    auto readyGoing = Sprite::create("/GamePlayScene/ReadyGoing.png");
+    readyGoing->setPosition(Vec2(origin.x + visibleSize.width / 2,
+        origin.y + visibleSize.height / 2));
+    time_layer->addChild(readyGoing);
+    readyGoing->runAction(Sequence::create(Repeat::create(RotateBy::create(1, -360), 3), FadeOut::create(0.1), nullptr));
+    readyGoPanel->runAction(Sequence::create(DelayTime::create(3), FadeOut::create(0.1), nullptr));
+    //帧动画
+    Vector<SpriteFrame*> frame;
+    frame.pushBack(SpriteFrame::create("/GamePlayScene/ReadyGo_3.png", Rect(0, 0, 95, 114)));
+    frame.pushBack(SpriteFrame::create("/GamePlayScene/ReadyGo_2.png", Rect(0, 0, 95, 114)));
+    frame.pushBack(SpriteFrame::create("/GamePlayScene/ReadyGo_1.png", Rect(0, 0, 95, 114)));
+    readyGoNumber->runAction(Sequence::create(Animate::create(Animation::createWithSpriteFrames(frame, 1)), FadeOut::create(0.1), nullptr));
+    //倒计时的时候所有可用格点闪烁
+    Sprite* grid[7][12];
+    for (int i = 0; i < 7; i++) {
+        for (int j = 0; j < 12; j++) {
+            grid[i][j] = static_cast<Sprite*>(this->getChildByTag(i * 100 + j));
+        }
+    }
+    //出怪倒计时特效
+    auto readyGo = Sprite::create("/GamePlayScene/ReadyGo1.png");
+    readyGo->setPosition(196, 650);
+    this->addChild(readyGo, 0);
+    readyGo->setVisible(false); // 初始隐藏
+    //帧动画
+    Vector<SpriteFrame*> frame1;
+    if (level == 0) {
+        frame1.pushBack(SpriteFrame::create("/MonsterStart/ReadyGo1.png", Rect(0, 0, 200, 260)));
+        frame1.pushBack(SpriteFrame::create("/MonsterStart/ReadyGo2.png", Rect(0, 0, 200, 260)));
+        frame1.pushBack(SpriteFrame::create("/MonsterStart/ReadyGo3.png", Rect(0, 0, 200, 260)));
+    }
+    else if (level == 1) {
+        frame1.pushBack(SpriteFrame::create("/MonsterStart/1.png", Rect(30, -90, 200, 260)));
+        frame1.pushBack(SpriteFrame::create("/MonsterStart/2.png", Rect(30, -90, 200, 260)));
+        frame1.pushBack(SpriteFrame::create("/MonsterStart/3.png", Rect(30, -90, 200, 260)));
+    }
+    else if (level == 2) {
+        frame1.pushBack(SpriteFrame::create("/MonsterStart/1.png", Rect(-1100, -180, 1400, 450)));
+        frame1.pushBack(SpriteFrame::create("/MonsterStart/2.png", Rect(-1100, -180, 1400, 450)));
+        frame1.pushBack(SpriteFrame::create("/MonsterStart/3.png", Rect(-1100, -180, 1400, 450)));
+    }
+    //动画
+    auto animation = Animate::create(Animation::createWithSpriteFrames(frame1, 1.0f)); // 每帧1秒
+    auto sequence = Sequence::create(
+        DelayTime::create(3.0f), // 延迟3秒
+        CallFunc::create([readyGo]() {
+            readyGo->setVisible(true); // 3秒后显示精灵
+            }),
+        animation,               // 播放动画
+        FadeOut::create(0.1f),   // 动画完成后淡出
+        nullptr
+    );
+    readyGo->runAction(sequence);
+}
+//初始化
+bool GameMenu::init()
+{
+    if (!Layer::init()) {
+        return false;
+    }
+    //获取屏幕大小
+    auto visibleSize = Director::getInstance()->getVisibleSize();
+    Vec2 origin = Director::getInstance()->getVisibleOrigin();
+    //菜单栏背景
+    auto menu_image = Sprite::create("/GamePlayScene/background.png");
+    menu_image->setPosition(Vec2(origin.x + visibleSize.width / 2,
+        origin.y + visibleSize.height - menu_image->getContentSize().height / 2));
+    menu_image->setOpacity(230);
+    this->addChild(menu_image);
+    //菜单
+    auto menu = Menu::create();
+    menu->setPosition(Vec2::ZERO);
+    this->addChild(menu);
+    //金币形象
+    auto coin = Sprite::create();
+    coin->setName("Coin");
+    this->addChild(coin, 1);
+    //金币数值
+    auto coin_number = Label::createWithTTF(std::to_string(coinNumber), "/fonts/TMON Monsori.ttf", 40);
+    coin_number->setTextColor(Color4B::WHITE);
+    coin_number->setName("CoinNumber");
+    coin_number->setPosition(282, 980);
+    this->addChild(coin_number);
+    coin_number->setString(std::to_string(coinNumber));// 更新金币数值显示
+    //波数显示
+    auto waves_image = Sprite::create("/GamePlayScene/wave_number.png");
+    waves_image->setPosition(Vec2(origin.x + visibleSize.width * 0.4,
+        origin.y + visibleSize.height * 0.95 + 12));
+    this->addChild(waves_image);
+    auto waves_label = Label::createWithTTF(std::to_string(currentWave / 10 % 10) + "    " + std::to_string(currentWave % 10), "/fonts/TMON Monsori.ttf", 38);
+    waves_label->setName("WavesLabel");
+    waves_label->setColor(Color3B::YELLOW);
+    waves_label->setPosition(Vec2(origin.x + visibleSize.width * 0.4,
+        origin.y + visibleSize.height * 0.94 + 14));
+    this->addChild(waves_label);
+    auto waves_txt = Label::createWithTTF("/ " + std::to_string(allWaves) + " Waves", "/fonts/TMON Monsori.ttf", 40);
+    waves_txt->setPosition(Vec2(origin.x + visibleSize.width * 0.525,
+        origin.y + visibleSize.height * 0.94 + 16));
+    this->addChild(waves_txt);
+    //暂停开关：初始isPause=0，如勾选则暂停
+    auto paused = Sprite::create("/GamePlayScene/paused.png");
+    paused->setScale(1.4);
+    paused->setPosition(Vec2(origin.x + visibleSize.width * 0.48,
+        origin.y + visibleSize.height * 0.95 + 12));
+    paused->setVisible(false);
+    this->addChild(paused, 1);
+    auto pause_off_sprite = Sprite::create("/GamePlayScene/isNotPaused.png");
+    auto pause_off = MenuItemSprite::create(pause_off_sprite, pause_off_sprite);
+    auto pause_on_sprite = Sprite::create("/GamePlayScene/isPaused.png");
+    auto pause_on = MenuItemSprite::create(pause_on_sprite, pause_on_sprite);
+    auto pause_toggle = MenuItemToggle::createWithCallback([=](Ref* psender) {
+        if (isPause == 0) {//若勾选，则表示暂停
+            isPause = 1;
+            paused->setVisible(true);
+            waves_image->setVisible(false);
+            waves_label->setVisible(false);
+            waves_txt->setVisible(false);
+        }
+        else {
+            isPause = 0;
+            paused->setVisible(false);
+            waves_image->setVisible(true);
+            waves_label->setVisible(true);
+            waves_txt->setVisible(true);
+        }
+        }, pause_off, pause_on, nullptr);
+    pause_toggle->setPosition(Vec2(Vec2(origin.x + visibleSize.width * 0.7,
+        origin.y + visibleSize.height * 0.955)));
+    menu->addChild(pause_toggle);   
+   start();
+    //选项
+    auto options_btn = Button::create("/GamePlayScene/touming-hd.pvr_28.PNG", "/GamePlayScene/touming-hd.pvr_26.PNG");
+    options_btn->setPosition(Vec2(origin.x + visibleSize.width * 0.8,
+        origin.y + visibleSize.height * 0.95 + 5));
+    options_btn->addTouchEventListener([this](Ref* psender, Button::TouchEventType type) {
+        switch (type) {
+        case Button::TouchEventType::BEGAN:
+            break;
+        case Button::TouchEventType::MOVED:
+            break;
+        case Button::TouchEventType::CANCELED:
+            break;
+        case Button::TouchEventType::ENDED:
+          options();
+           
+            break;
+        }
+        });
+    this->addChild(options_btn);
+    return true;
+}
+//选项:设置界面
+void GameMenu::options() {
+    // 获取屏幕大小
+    auto visibleSize = Director::getInstance()->getVisibleSize();
+    Vec2 origin = Director::getInstance()->getVisibleOrigin();
+    
+    /************************  纯色层  *****************************/
+    isPause = 1;  // 游戏暂停
+    auto blackLayer = LayerColor::create(Color4B::BLACK);
+    blackLayer->setPosition(Vec2::ZERO);
+    blackLayer->setOpacity(90);  // 不透明度0.9
+    this->addChild(blackLayer, 2);  // 将黑色层添加到第二层，确保在其他内容上方
+
+    /************************  事件监听器  *****************************/
+    auto listener = EventListenerTouchOneByOne::create();
+    listener->setSwallowTouches(true);  // 确保触摸事件不传递给下层
+    listener->onTouchBegan = [blackLayer](Touch* touch, Event* event) {
+        // 确保返回true来阻止下层的触摸事件
+        return true; 
+    };
+    Director::getInstance()->getEventDispatcher()->addEventListenerWithSceneGraphPriority(listener, blackLayer);
+
+    /******************  背景  ***************************/
+    auto optionsBackground = Sprite::create("/GamePlayScene/options_bg.png");
+    optionsBackground->setPosition(Vec2(origin.x + visibleSize.width / 2, origin.y + visibleSize.height / 2));
+    
+    blackLayer->getParent()->getParent()->addChild(optionsBackground, 3);  // 添加到第三层
+
+    /*******************  菜单  ***************************/
+    auto optionsMenu = Menu::create();
+    optionsMenu->setPosition(Vec2::ZERO);
+    blackLayer->getParent()->getParent()->addChild(optionsMenu, 3);  // 确保菜单在最上层
+
+    // 继续游戏按钮
+    auto continueGame = MenuItemImage::create("/GamePlayScene/resume_normal.png", "/GamePlayScene/resume_selected.png");
+    continueGame->setPosition(Vec2(visibleSize.width * 0.492, visibleSize.height * 0.603));
+    // 继续游戏按钮回调
+    continueGame->setCallback([this, blackLayer, optionsMenu, optionsBackground](Ref* psender) {
+        // 移除黑色层
+        this->removeChild(blackLayer);
+
+        // 使用反向迭代器移除菜单中的所有子项
+        auto children = optionsMenu->getChildren();
+        for (auto it = children.rbegin(); it != children.rend(); ++it) {
+            optionsMenu->removeChild(*it, true);  // 第二个参数 true 表示清理资源
+        }
+
+        // 移除背景
+        optionsBackground->removeFromParent();
+        isPause = 0;
+    });
+    optionsMenu->addChild(continueGame, 3);
+   
+    // 重新开始按钮
+    auto restartGame = MenuItemImage::create("/GamePlayScene/restart_normal.png", "/GamePlayScene/restart_selected.png");
+    restartGame->setPosition(Vec2(visibleSize.width * 0.492, visibleSize.height * 0.513));
+    restartGame->setCallback([this, blackLayer](Ref* psender) {
+        this->removeChildByName("PlayingLevel");
+      
+        // 重新开始游戏时恢复初始状态
+        //重置游戏状态
+
+        // 重新加载游戏场景
+        auto newMapScene = MAP_SCENE::create();
+        newMapScene->initLevel(level);  // 初始化关卡
+        Director::getInstance()->replaceScene(newMapScene);  // 切换到新的场景
+
+        isPause = 0;
+    });
+    optionsMenu->addChild(restartGame, 3);
+
+    // 选择关卡按钮
+    auto returnSelect = MenuItemImage::create("/GamePlayScene/return_normal.png", "/GamePlayScene/return_selected.png");
+    returnSelect->setPosition(Vec2(visibleSize.width * 0.492, visibleSize.height * 0.42));
+    returnSelect->setCallback([this, blackLayer](Ref* psender) {
+        // 跳转到 HelloWorld 场景
+        auto helloWorldScene = HelloWorld::createScene();  // 创建 HelloWorld 场景
+        Director::getInstance()->replaceScene(helloWorldScene);  // 替换当前场景
+    });
+    optionsMenu->addChild(returnSelect, 3);
+}
+//失败结算画面
+void GameMenu::showLosePopup() {
     CCLOG("showLosePopup called");
     isPause =true; // 停止游戏逻辑
     /*******************************  数据更新  *****************************/
@@ -132,8 +393,8 @@ void GameMenu::showLosePopup() {//失败结算画面
         });
     options_menu->addChild(return_btn,2);
 }
-
-void GameMenu::showWinPopup() { //胜利结算画面
+//胜利结算画面
+void GameMenu::showWinPopup() { 
     isPause = true; // 停止游戏逻辑
     /*******************************  数据更新  *****************************/
    // UserDefault::getInstance()->setIntegerForKey("money_statistics", UserDefault::getInstance()->getIntegerForKey("money_statistics") + coinNumber);
