@@ -66,20 +66,6 @@ protected:
     Tower* towerArray[8][12] = { nullptr };
     BarrierManager* barrierManager = nullptr;  // 管理障碍物
 };
-//游戏菜单类
-class GameMenu :public cocos2d::Layer
-{
-public:
-    //构造函数
-    static cocos2d::Layer* createLayer();
-    virtual bool init();
-    CREATE_FUNC(GameMenu);
-    void start();
-    //选项
-    void options();
-    void showLosePopup();
-    void showWinPopup();
 
-};
 
 #endif // __MAP_H__
