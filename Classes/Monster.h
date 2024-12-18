@@ -1,7 +1,10 @@
 #pragma once
 #include <vector>
+#include <algorithm>
 #include "cocos2d.h"
 #include "HelloWorldScene.h"
+#include "Tower.h"
+#include "Bullet.h"
 
 USING_NS_CC;
 using namespace cocos2d;
@@ -9,6 +12,10 @@ using namespace cocos2d;
 extern int isPause; //是否暂停
 extern int allWaves; //总的波数
 extern int currentWave; //当前怪物的波数
+
+class Tower;
+extern std::vector<Bullet*> bullets;
+extern std::vector<Tower*> towers;
 
 //总共有 4 种怪物类型
 #define MONSTER_TOTAL 4   
@@ -76,6 +83,7 @@ struct MonsterType {
     float speed;        //移动速度
     bool is_slowing;    //是否减速
     float slowing_time; //减速时间
+    float total_slowing_time; //总减速时间
     //	int full_HP;                   //满血
     //	int ATK;                       //攻击值
 
@@ -95,26 +103,34 @@ struct MapPath {
 
 //定义怪物类
 class Monster : public Sprite {
-private:   
+private:
+    Sprite* slowAnimationSprite = Sprite::create("/Monster/Attack/Slowdown_1.png");
     MapPath* path;             // 存储怪物路径的数组
     MonsterType type;  // 怪物的类型（血量、速度等）
     Sprite* hp_border, * hp;   // 怪物的血条背景和当前血量
     int path_count;            // 当前怪物所在路径的索引
     int path_total;            // 路径的总数
+    Bullet* closestBullet;
 public:
+    bool isRemoved;   //是否消失
+    bool selected;    //是否被选中
     CREATE_FUNC(Monster);
 
     //初始化怪物
     virtual bool init();
 
     //初始化怪物类型和路径
-    void initType(int monster_type,int map_type);
+    void initType(int monster_type, int map_type);
+
+    void findNearestBullet();
 
     //每帧更新怪物的位置和血量
     virtual void update(float dt);
 
     //受到攻击
-    void receiveDamage(float x,float y);
+    void receiveDamage();
+
+    void createSlowAnimation(float x, float y);
 };
 
 //存储所有怪物的 vector
@@ -123,6 +139,7 @@ extern std::vector<Monster*> monsters;
 // MonsterCreate 类，用于创建怪物并管理怪物生成的波次
 class MonsterCreate : public Sprite {
 private:
+    int ad1_wave = 5;
     float waveTimer = 0.0f;  // 计时器，用来控制每波怪物的生成间隔
     int map_type;            //当前地图类型
 public:
@@ -147,19 +164,7 @@ public:
 
     //初始化怪物并将其添加到场景
     void initMonster(int monster_type) {
-        /**********************************************/
-        //出怪特效
-        auto effect = Sprite::create("/MonsterStart/monster_appear_effect.png");
-        effect->setContentSize(Size(60, 60));
-        effect->setPosition(192, 704);
-        this->addChild(effect, 3);
-        // 出怪放大、淡出特效
-        auto monsterScaleEffect = ScaleTo::create(0.2f, 3.0f); // 0.5秒放大到3.5倍
-        auto monsterFadeEffect = FadeOut::create(0.5f);       // 同时淡出
-        // 动作序列：放大特效 -> 淡出特效 -> 显示怪物
-        auto monsterSequence = Sequence::create(monsterScaleEffect, monsterFadeEffect, nullptr);
-        effect->runAction(monsterSequence);
-        /**********************************************/
+       
 
         //怪物出现
         auto monster = Monster::create();
@@ -193,7 +198,7 @@ public:
                         }),
                     nullptr));
             }
-            
+
             //生成 5 波高速怪物，每波间隔 1.0 秒
             for (int i = 0; i < 5; i++) {
                 this->runAction(Sequence::create(DelayTime::create((i + 5) * 1.0f),
@@ -213,7 +218,7 @@ public:
                     nullptr));
 
             }
-            
+
 
             break;
         case ADVENTURE2:
@@ -223,7 +228,7 @@ public:
         }
     }
     */
-    
+
 
     virtual void update(float dt) {
         //暂停
@@ -239,17 +244,18 @@ public:
 
     //控制怪物波次生成的函数
     void handleMonsterWaves(float dt) {
+        static int wave = 1;
         float wave_interval[MONSTER_TOTAL] = { 1.4f,1.0f,1.6f };  // 每波生成的时间间隔（1.4秒）
 
         // 判断当前时间是否到了生成怪物的时刻
-        if (currentWave < 5) {  // 例如最多生成5波怪物
+        if (wave < ad1_wave) {  // 例如最多生成5波怪物
             // 第一波直接生成
-            if (currentWave == 1) {
+            if (wave == 1) {
                 // 生成怪物
                 initMonster(NORMAL);  // 你可以根据需要改变生成怪物的类型
 
                 // 增加波次计数
-                currentWave++;
+                wave++;
 
                 // 重置计时器
                 waveTimer = 0.0f;
@@ -260,95 +266,11 @@ public:
                 initMonster(NORMAL);  // 你可以根据需要改变生成怪物的类型
 
                 // 增加波次计数
-                currentWave++;
+                wave++;
 
                 // 重置计时器
                 waveTimer = 0.0f;  // 重置计时器
             }
         }
-    }
-};
-//用于管理萝卜的血量和形象更新
-class Carrot : public Node {
-public:
-    // 创建一个实例
-    CREATE_FUNC(Carrot);
-
-    // 萝卜形象图片数组
-    std::string picture[10] = {
-        "/Carrot/HP_MAX.png",
-        "/Carrot/HP_1.png", "/Carrot/HP_2.png", "/Carrot/HP_3.png",
-        "/Carrot/HP_4.png", "/Carrot/HP_5-6.png", "/Carrot/HP_5-6.png",
-        "/Carrot/HP_7-8.png", "/Carrot/HP_9.png", "/Carrot/HP_MAX.png"
-    };
-
-    // 初始化萝卜的显示
-    bool init() override {
-        if (!Node::init()) {
-            return false;
-        }
-        if (level == 0){
-            // 初始化萝卜血量背景板
-            auto carrot_hp = Sprite::create("/Carrot/Hp.png");
-            carrot_hp->setContentSize(Size(96, 48));
-            carrot_hp->setPosition(1452, 760);
-            this->addChild(carrot_hp, 0);
-            // 初始化萝卜形象
-            auto carrot = Sprite::create("/Carrot/HP_MAX.png");
-            carrot->setContentSize(Size(96, 142));
-            carrot->setPosition(1360, 768);
-            carrot->setName("carrot");
-            this->addChild(carrot, 0);
-
-            // 初始化萝卜血量数值
-            auto carrot_hp_number = Label::createWithTTF(std::to_string(carrotHP), "/fonts/TMON Monsori.ttf", 28);
-            carrot_hp_number->setTextColor(Color4B::YELLOW);
-            carrot_hp_number->setName("HpNumber");
-            carrot_hp_number->setPosition(1467, 760);
-            this->addChild(carrot_hp_number);
-        }
-        else if (level == 1) {
-            // 初始化萝卜血量背景板
-            auto carrot_hp = Sprite::create("/Carrot/Hp.png");
-            carrot_hp->setContentSize(Size(96, 48));
-            carrot_hp->setPosition(1324, 760);
-            this->addChild(carrot_hp, 0);
-            // 初始化萝卜形象
-            auto carrot = Sprite::create("/Carrot/HP_MAX.png");
-            carrot->setContentSize(Size(96, 142));
-            carrot->setPosition(1232, 768);
-            carrot->setName("carrot");
-            this->addChild(carrot, 0);
-
-            // 初始化萝卜血量数值
-            auto carrot_hp_number = Label::createWithTTF(std::to_string(carrotHP), "/fonts/TMON Monsori.ttf", 28);
-            carrot_hp_number->setTextColor(Color4B::YELLOW);
-            carrot_hp_number->setName("HpNumber");
-            carrot_hp_number->setPosition(1339, 760);
-            this->addChild(carrot_hp_number);
-        }
-
-        return true;
-    }
-
-    // 更新萝卜形象和血量显示
-    void updateDisplay() {
-        // 确保从场景中获取到的子节点是指针类型
-        auto carrot = dynamic_cast<Sprite*>(this->getChildByName("carrot"));
-        auto carrot_hp_label = dynamic_cast<Label*>(this->getChildByName("HpNumber"));
-
-        // 检查是否成功获取萝卜和血量标签
-        if (!carrot || !carrot_hp_label) {
-            CCLOG("Failed to find carrot or HpNumber label!");
-            return;
-        }
-
-        // 更新萝卜形象
-        if (carrotHP >= 0 && carrotHP < 10) {
-            carrot->setTexture(picture[carrotHP]);
-        }
-
-        // 更新血量显示
-        carrot_hp_label->setString(std::to_string(carrotHP));
     }
 };
