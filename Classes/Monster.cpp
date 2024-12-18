@@ -293,7 +293,31 @@ void Monster::update(float dt) {
                 slowAnimationSprite = NULL;
             }
         }
+        /**********************************************/
+        // 创建消失特效动画（两秒持续时间）
+        Vector<SpriteFrame*> frames;
+        for (int i = 1; i <= 6; ++i) {
+            std::string frameName = "/MonsterStart/monster_vanish_effect" + std::to_string(i) + ".png";
+            frames.pushBack(SpriteFrame::create(frameName, Rect(0, 0, 128, 128)));
+        }
+        // 每帧显示时间 = 总时间 / 帧数
+        float frameDuration = 0.5f / frames.size();
+        auto vanishAnimation = Animation::createWithSpriteFrames(frames, frameDuration);
+        auto vanishAnimate = Animate::create(vanishAnimation);
+        // 创建消失特效精灵
+        auto effect = Sprite::create("/MonsterStart/monster_vanish_effect1.png");
+        effect->setContentSize(Size(60, 60));
+        effect->setPosition(now_x, now_y); // 特效初始位置与怪物一致
+        this->getParent()->addChild(effect, 2);
+        // 消失怪物的回调
+        auto disappearMonster = CallFunc::create([effect]() {
+            effect->removeFromParent();         // 删除特效精灵
 
+            });
+        // 动作序列：播放动画 -> 隐藏怪物
+        auto monsterSequence = Sequence::create(vanishAnimate, disappearMonster, nullptr);
+        effect->runAction(monsterSequence);
+        /**********************************************/
 
         monsters.erase(find_if(monsters.begin(), monsters.end(), [this](const Monster* monster) {return monster == this; }));
         this->removeFromParent();
@@ -321,6 +345,13 @@ void Monster::createSlowAnimation(float x, float y) {
     slowAnimationSprite->runAction(RepeatForever::create(animate)->clone());
     slowAnimationSprite->setName("slow");
     this->getParent()->addChild(slowAnimationSprite, 2);
+    /**********************************************/
+    // 开始同步特效位置
+    if (slowAnimationSprite != nullptr)
+        this->schedule([this, slowAnimationSprite](float) {
+        slowAnimationSprite->setPosition(this->getPosition()); // 每帧同步特效位置
+            }, "syncEffectPosition");
+    /**********************************************/
 }
 void Monster::receiveDamage() {
     if (closestBullet->GetType() == SHITBULLET) {
