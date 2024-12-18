@@ -164,8 +164,19 @@ public:
 
     //初始化怪物并将其添加到场景
     void initMonster(int monster_type) {
-       
-
+        /**********************************************/
+        //出怪特效
+        auto effect = Sprite::create("/MonsterStart/monster_appear_effect.png");
+        effect->setContentSize(Size(60, 60));
+        effect->setPosition(192, 704);
+        this->getParent()->addChild(effect, 3);
+        // 出怪放大、淡出特效
+        auto monsterScaleEffect = ScaleTo::create(0.2f, 3.0f); // 0.5秒放大到3.5倍
+        auto monsterFadeEffect = FadeOut::create(0.5f);       // 同时淡出
+        // 动作序列：放大特效 -> 淡出特效 -> 显示怪物
+        auto monsterSequence = Sequence::create(monsterScaleEffect, monsterFadeEffect, nullptr);
+        effect->runAction(monsterSequence);
+        /**********************************************/
         //怪物出现
         auto monster = Monster::create();
         if (!monster) {
