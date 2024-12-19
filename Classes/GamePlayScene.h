@@ -51,6 +51,7 @@ public:
     void updateordeleteTowerPreview(int row, int col);
     void handleTowerClick(int row, int col);
     void initLevel(int level); // 初始化关卡的方法
+     void initResources();
     void setBackground(const std::string& backgroundImage);
     //void initWaves(int allWaves); // 初始化波次的方法
     void onExitGame();
