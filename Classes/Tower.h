@@ -5,10 +5,18 @@
 #include "AppDelegate.h"
 #include "HelloWorldScene.h"
 #include "Monster.h"
+#include "GamePlayScene.h"
+#include "BarrierAppear.h"
 #include "Bullet.h"
 #include <string>
+#include <vector>
+class Monster;
+class Bullet;
+class Sunflowerfire;
 extern std::vector<Monster*> monsters;
 extern std::vector<Bullet*> bullets;
+extern std::vector<Sunflowerfire*>sunflowers;
+extern std::vector<Bullet*>bulletsTowardBarrier;
 USING_NS_CC;
 #define BOTTLEBULLET 0
 #define SHITBULLET 1
@@ -16,7 +24,8 @@ USING_NS_CC;
 
 extern int isPause;//是否暂停
 extern int coinNumber;//记录当前金币的数量
-
+extern BarrierManager* barrierManager;  // 管理障碍物 
+extern Monster* clickedMonster ;//选中的优先攻击怪兽
 
 class Tower : public cocos2d::Sprite {
 protected:
@@ -31,6 +40,8 @@ protected:
     cocos2d::Vec2 fireTarget; // 目标坐标
     std::string ImageBase; // 图片路径
     cocos2d::Sprite* weapon; // 武器
+    Monster* currentTarget = nullptr;  // 当前目标敌人
+    bool isLockedTarget = false;  // 是否锁定目标，防止频繁切换目标
 
 public:
     // 构造函数
@@ -50,14 +61,14 @@ public:
 
     // 每帧更新方法
     virtual void update(float dt);
+
+    virtual void findNearestEnemy();
 };
 
 
 
 class BottleTower : public Tower {
-private:
-    Monster* currentTarget = nullptr;  // 当前目标敌人
-    bool isLockedTarget = false;  // 是否锁定目标，防止频繁切换目标
+
 
 public:
     static BottleTower* create(const std::string& fileName);
@@ -76,8 +87,6 @@ public:
 
     void update(float dt) override;
 
-    void findNearestEnemy(const std::vector<Monster*>& enemies);
-
     void rotateTowardsEnemy();
 
     void shoot();
@@ -88,9 +97,7 @@ public:
 
 
 class ShitTower : public Tower {
-private:
-    Monster* currentTarget = nullptr;  // 当前目标敌人
-    bool isLockedTarget = false;  // 是否锁定目标，防止频繁切换目标
+
 
 public:
     static ShitTower* create(const std::string& fileName);
@@ -108,8 +115,6 @@ public:
     int getsellPrice() const override;
 
     void update(float dt) override;
-
-    void findNearestEnemy(const std::vector<Monster*>& enemies);
 
     void shoot();
 
@@ -144,7 +149,7 @@ public:
 
     void startAttack();
 
-    void findNearestEnemy(const std::vector<Monster*>& enemies);
+    void findNearestEnemy()override;
 
     int getType();
 };
