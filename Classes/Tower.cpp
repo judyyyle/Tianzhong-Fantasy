@@ -44,9 +44,55 @@ void Tower::update(float dt) {
     }
     // 子类可以重写此方法，实现具体逻辑
 }
+void Tower::findNearestEnemy() {
+    // 如果没有锁定目标或当前目标不在攻击范围内，重新寻找最近的敌人
+    if (clickedMonster && clickedMonster->isRemoved == false) {
+        cocos2d::Vec2 towerPos = this->getPosition();
+        float distanceToclickedMonster = towerPos.distance(clickedMonster->getPosition());
+
+        if (distanceToclickedMonster <= attack_range) {
+            currentTarget = clickedMonster;
+            return;
+        }
+    }
+    float minDistance = attack_range;  // 限制攻击范围
+    Monster* closestEnemy = nullptr;
+    cocos2d::Vec2 towerPos = this->getPosition();
+
+    for (auto enemy : monsters) {
+        cocos2d::Vec2 enemyPos = enemy->getPosition();
+        float distance = towerPos.distance(enemyPos);
+        if (distance < minDistance) {
+            minDistance = distance;
+            closestEnemy = enemy;
+        }
+    }
+    //if(currentTarget->getParent()==NULL)
+    //if (currentTarget->isRemoved)
+    if (!isLockedTarget || currentTarget == NULL || currentTarget->isRemoved == true) {
+        currentTarget = closestEnemy;  // 更新锁定目标
+    }
+    if (closestEnemy) {
+        isLockedTarget = true;         // 锁定目标
+    }
+    // 如果目标已锁定，检查目标是否在攻击范围内
+    if (isLockedTarget && currentTarget) {
+        cocos2d::Vec2 towerPos = this->getPosition();
+        float distanceToTarget = towerPos.distance(currentTarget->getPosition());
+
+        // 如果目标超出了攻击范围，取消锁定目标
+        if (distanceToTarget > attack_range) {
+            currentTarget = nullptr;  // 取消当前目标
+            isLockedTarget = false;   // 取消锁定状态
+        }
+        else {
+            return;  // 如果目标在攻击范围内，不做改变
+        }
+    }
+}
 
 
-BottleTower* BottleTower:: create(const std::string& fileName) {
+BottleTower* BottleTower::create(const std::string& fileName) {
     BottleTower* ret = new BottleTower(fileName);
     if (ret && ret->init()) {
         ret->autorelease();
@@ -70,7 +116,7 @@ BottleTower::BottleTower(const std::string& fileName) : Tower(fileName) {
     attack_range = 196;
 }
 int  BottleTower::getType() { return Type; }
-bool  BottleTower::init()  {
+bool  BottleTower::init() {
 
     this->scheduleUpdate();  // 定期调用 update 函数
 
@@ -102,7 +148,7 @@ void  BottleTower::updateAppearance() {
     std::string imagePath = "GamePlayScene/bottle_level_" + std::to_string(level) + ".png";
     this->setTexture(imagePath);  // 根据等级更新图片
 }
-int  BottleTower::getUpgradeCost() const  {
+int  BottleTower::getUpgradeCost() const {
     return value + 80;
 }
 int  BottleTower::getsellPrice() const {
@@ -112,53 +158,39 @@ void  BottleTower::update(float dt) {
     if (isPause) {
         return;
     }
-    findNearestEnemy(monsters);  // 寻找最近的敌人
-    if (currentTarget) {
+    findNearestEnemy();  // 寻找最近的敌人
+    if (currentTarget|| barrierManager->selectedBarrier) {
         rotateTowardsEnemy();  // 面向最近的敌人
     }
 }
-void  BottleTower::findNearestEnemy(const std::vector<Monster*>& enemies) {
-   
 
-    // 如果没有锁定目标或当前目标不在攻击范围内，重新寻找最近的敌人
-    float minDistance = attack_range;  // 限制攻击范围
-    Monster* closestEnemy = nullptr;
-    cocos2d::Vec2 towerPos = this->getPosition();
-
-    for (auto enemy : enemies) {
-        cocos2d::Vec2 enemyPos = enemy->getPosition();
-        float distance = towerPos.distance(enemyPos);
-        if (distance < minDistance) {
-            minDistance = distance;
-            closestEnemy = enemy;
-        }
-    }
-    //if(currentTarget->getParent()==NULL)
-    //if (currentTarget->isRemoved)
-    if (!isLockedTarget || currentTarget == NULL || currentTarget->isRemoved==true) {
-        currentTarget = closestEnemy;  // 更新锁定目标
-    }
-    if (closestEnemy) {
-        isLockedTarget = true;         // 锁定目标
-    }
-    // 如果目标已锁定，检查目标是否在攻击范围内
-    if (isLockedTarget && currentTarget) {
-        cocos2d::Vec2 towerPos = this->getPosition();
-        float distanceToTarget = towerPos.distance(currentTarget->getPosition());
-
-        // 如果目标超出了攻击范围，取消锁定目标
-        if (distanceToTarget > attack_range) {
-            currentTarget = nullptr;  // 取消当前目标
-            isLockedTarget = false;   // 取消锁定状态
-        }
-        else {
-            return;  // 如果目标在攻击范围内，不做改变
-        }
-    }
-
-}
 // 修改 rotateTowardsEnemy 函数
 void  BottleTower::rotateTowardsEnemy() {
+    if (barrierManager->selectedBarrier) {
+        // 获取防御塔的位置
+        cocos2d::Vec2 towerPos = this->getPosition();
+        float distanceToBarrier = towerPos.distance(barrierManager->selectedBarrier->barrierSprite->getPosition());
+
+        if (distanceToBarrier <= attack_range) {
+            cocos2d::Vec2 towerPos = this->getPosition();
+            // 获取当前目标敌人的位置
+            cocos2d::Vec2 enemyPos = barrierManager->selectedBarrier->barrierSprite->getPosition();
+
+            // 计算防御塔到敌人的方向向量
+            cocos2d::Vec2 direction = enemyPos - towerPos;
+
+            // 计算方向向量的角度（单位：弧度）
+            float angle = direction.getAngle();  // 返回的是弧度，范围是[-pi, pi]
+
+            // 将弧度转化为角度
+            float angleInDegrees = CC_RADIANS_TO_DEGREES(angle);  // 转换为度数
+
+            // 设置旋转角度，注意 cocos2d 的旋转是逆时针为正，所以角度保持原样即可
+            this->setRotation(-angleInDegrees);  // 使防御塔旋转到目标方向
+            return;
+        }
+        
+    }
     if (currentTarget) {
         // 获取防御塔的位置
         cocos2d::Vec2 towerPos = this->getPosition();
@@ -176,9 +208,28 @@ void  BottleTower::rotateTowardsEnemy() {
 
         // 设置旋转角度，注意 cocos2d 的旋转是逆时针为正，所以角度保持原样即可
         this->setRotation(-angleInDegrees);  // 使防御塔旋转到目标方向
+        return;
     }
 }
 void  BottleTower::shoot() {
+    if (barrierManager->selectedBarrier) {
+        // 获取防御塔的位置
+        cocos2d::Vec2 towerPos = this->getPosition();
+        float distanceToBarrier = towerPos.distance(barrierManager->selectedBarrier->barrierSprite->getPosition());
+
+        if (distanceToBarrier <= attack_range) {
+            // 获取敌人的位置
+            cocos2d::Vec2 enemyPos = barrierManager->selectedBarrier->barrierSprite->getPosition();
+            // 获取塔的位置
+            cocos2d::Vec2 towerPos = this->getPosition();
+            // 创建子弹
+            auto bullet = Bullet::create("/GamePlayScene/bottle_level_" + std::to_string(level) + "_bullet.png", towerPos, enemyPos, 600.0f, Type, level);
+            this->getParent()->addChild(bullet, 3); // 将子弹添加到场景中
+            bulletsTowardBarrier.push_back(bullet);
+            return;
+        }
+
+    }
     if (currentTarget) {
         // 获取敌人的位置
         cocos2d::Vec2 enemyPos = currentTarget->getPosition();
@@ -188,6 +239,7 @@ void  BottleTower::shoot() {
         auto bullet = Bullet::create("/GamePlayScene/bottle_level_" + std::to_string(level) + "_bullet.png", towerPos, enemyPos, 600.0f, Type, level);
         this->getParent()->addChild(bullet, 3); // 将子弹添加到场景中
         bullets.push_back(bullet);
+        return;
     }
 }
 
@@ -258,57 +310,24 @@ void ShitTower::updateAppearance() {
     this->setTexture(imagePath);  // 根据等级更新图片
 }
 
-int ShitTower::getUpgradeCost() const  {
+int ShitTower::getUpgradeCost() const {
     return value + 80;  // 升级费用
 }
 
-int ShitTower::getsellPrice() const  {
+int ShitTower::getsellPrice() const {
     return cost * 0.8;  // 卖出价格
 }
 
 void ShitTower::update(float dt) {
     if (isPause) {
+        this->stopAllActions();
+        this->setTexture("/GamePlayScene/shit_level_" + std::to_string(level) + ".png");
         return;
     }
-    findNearestEnemy(monsters);  // 寻找最近的敌人
+    findNearestEnemy();  // 寻找最近的敌人
 }
 
-void ShitTower::findNearestEnemy(const std::vector<Monster*>& enemies) {
 
-    // 如果没有锁定目标或当前目标不在攻击范围内，重新寻找最近的敌人
-    float minDistance = attack_range;  // 限制攻击范围
-    Monster* closestEnemy = nullptr;
-    cocos2d::Vec2 towerPos = this->getPosition();
-
-    for (auto enemy : enemies) {
-        cocos2d::Vec2 enemyPos = enemy->getPosition();
-        float distance = towerPos.distance(enemyPos);
-        if (distance < minDistance) {
-            minDistance = distance;
-            closestEnemy = enemy;
-        }
-    }
-    if (!isLockedTarget || currentTarget == NULL || currentTarget->isRemoved == true) {
-        currentTarget = closestEnemy;  // 更新锁定目标
-    }
-    if (closestEnemy) {
-        isLockedTarget = true;         // 锁定目标
-    }
-    // 如果目标已锁定，检查目标是否在攻击范围内
-    if (isLockedTarget && currentTarget) {
-        cocos2d::Vec2 towerPos = this->getPosition();
-        float distanceToTarget = towerPos.distance(currentTarget->getPosition());
-
-        // 如果目标超出了攻击范围，取消锁定目标
-        if (distanceToTarget > attack_range) {
-            currentTarget = nullptr;  // 取消当前目标
-            isLockedTarget = false;   // 取消锁定状态
-        }
-        else {
-            return;  // 如果目标在攻击范围内，不做改变
-        }
-    }
-}
 
 void ShitTower::shoot() {
     // 加载图片
@@ -328,6 +347,36 @@ void ShitTower::shoot() {
     shitanimation = Animation::createWithSpriteFrames(shitanimFrames, 0.4f);
     shitanimate = Animate::create(shitanimation);
     auto repeatAction = cocos2d::RepeatForever::create(shitanimate);
+    if (barrierManager->selectedBarrier) {
+        // 获取防御塔的位置
+        cocos2d::Vec2 towerPos = this->getPosition();
+        float distanceToBarrier = towerPos.distance(barrierManager->selectedBarrier->barrierSprite->getPosition());
+
+        if (distanceToBarrier <= attack_range) {
+            this->runAction(repeatAction->clone());
+            // 获取敌人的位置
+            cocos2d::Vec2 enemyPos = barrierManager->selectedBarrier->barrierSprite->getPosition();
+            // 获取塔的位置
+            cocos2d::Vec2 towerPos = this->getPosition();
+
+            // 创建子弹
+            auto bullet = Bullet::create("/GamePlayScene/shit_level_" + std::to_string(level) + "_bullet.png", towerPos, enemyPos, 600.0f, Type, level);
+
+            // 计算子弹旋转角度
+            cocos2d::Vec2 direction = enemyPos - towerPos;
+            float angle = CC_RADIANS_TO_DEGREES(direction.getAngle());
+
+            // 设置子弹的旋转角度
+            bullet->setRotation(-angle);
+
+            // 将子弹添加到场景中
+            this->getParent()->addChild(bullet, 3);
+            bulletsTowardBarrier.push_back(bullet);
+            return;
+        }
+            
+        
+    }
     if (currentTarget) {
 
         this->runAction(repeatAction->clone());
@@ -384,12 +433,22 @@ SunflowerTower::SunflowerTower(const std::string& fileName) : Tower(fileName) {
 
 int SunflowerTower::getType() { return Type; }
 
-bool SunflowerTower::init()  {
+bool SunflowerTower::init() {
     this->scheduleUpdate(); // 定期调用 update 函数
     // 每 1.2 秒调用一次 attack 函数
     schedule([this](float deltaTime) {
         if (isPause) {
             return;
+        }
+        if (barrierManager->selectedBarrier)
+        {
+            cocos2d::Vec2 towerPos = this->getPosition();
+            float distanceToBarrier = towerPos.distance(barrierManager->selectedBarrier->barrierSprite->getPosition());
+
+            if (distanceToBarrier <= attack_range) {
+                startAttack(); // 开始攻击
+            }
+
         }
         if (currentTarget)
         {
@@ -424,43 +483,58 @@ void SunflowerTower::updateAppearance() {
 }
 
 int SunflowerTower::getUpgradeCost() const {
-    return value + 100;  
+    return value + 100;
 }
 
 int SunflowerTower::getsellPrice() const {
-    return cost * 0.8;  
+    return cost * 0.8;
 }
 
 void SunflowerTower::update(float dt) {
     if (isPause) {
         return;
     }
-    findNearestEnemy(monsters); // 寻找最近的敌人
+    findNearestEnemy(); // 寻找最近的敌人
 
 
 }
 
 void SunflowerTower::startAttack() {
     isAttacking = true;
-    auto bullet = Sunflowerfire::create("GamePlayScene/sunflower_level_1_bullet.png",level);
+    auto bullet = Sunflowerfire::create("GamePlayScene/sunflower_level_1_bullet.png", level);
+    sunflowers.push_back(bullet);
     bullet->setPosition(this->getPosition());
-    bullet->setScale(1000.0f);
+    //bullet->setScale(1000.0f);
     this->getParent()->addChild(bullet, 3);
-    auto scaleUp = cocos2d::ScaleTo::create(0.5f, 2.0f * (attack_range / 100 - 0.8)); // 根据等级放大
+    auto scaleUp = cocos2d::ScaleTo::create(0.3f, 2.0f * (attack_range / 100 - 0.8)); // 根据等级放大
     auto fadeOut = cocos2d::FadeOut::create(0.5f);
     auto removeBullet = cocos2d::CallFunc::create([bullet]() {
         bullet->removeFromParent();
+        auto it = std::find(sunflowers.begin(), sunflowers.end(), bullet);
+        if (it != sunflowers.end()) {
+            sunflowers.erase(it);
+        }
         });
     auto sequence = cocos2d::Sequence::create(scaleUp, fadeOut, removeBullet, nullptr);
     bullet->runAction(sequence);
 }
 
-void SunflowerTower::findNearestEnemy(const std::vector<Monster*>& enemies) {
+void SunflowerTower::findNearestEnemy() {
     float minDistance = attack_range;  // 限制攻击范围
     cocos2d::Sprite* closestEnemy = nullptr;
     cocos2d::Vec2 towerPos = this->getPosition();
 
-    for (auto enemy : enemies) {
+
+    if (clickedMonster && clickedMonster->isRemoved == false) {
+        cocos2d::Vec2 towerPos = this->getPosition();
+        float distanceToclickedMonster = towerPos.distance(clickedMonster->getPosition());
+
+        if (distanceToclickedMonster <= attack_range) {
+            currentTarget = clickedMonster;
+            return;
+        }
+    }
+    for (auto enemy : monsters) {
         cocos2d::Vec2 enemyPos = enemy->getPosition();
         float distance = towerPos.distance(enemyPos);
         if (distance < minDistance) {
