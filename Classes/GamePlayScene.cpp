@@ -965,9 +965,7 @@ void  MAP_SCENE::initLevel(int level)// 初始化关卡的方法
         break;
     }
     initializeMapArray(level);
-
-   
-    //initResources(); 初始化游戏资源
+    initResources(); 初始化游戏资源
     
     // 设置游戏层的名字
     this->setName("PlayingLevel");  // 设置当前层的名字
@@ -1078,6 +1076,25 @@ void MAP_SCENE::onEnterGame() {
     this->initLevel(GameManager::getInstance()->level);
     this->initWaves(GameManager::getInstance()->allWaves);
 }*/
+void  MAP_SCENE::initResources() {
+    switch (level) {
+    case 0:
+        coinNumber = 450;
+        allWaves = 15;
+        carrotHP = 10;
+        break;
+    case 1:
+        coinNumber = 550;
+        allWaves = 25;
+        carrotHP = 10;
+        break;
+    case 2:
+        coinNumber = 1000;
+        allWaves = 30;
+        break;
+    }   
+}
+
 
 void MAP_SCENE::initializeMapArray(int level) {
    
