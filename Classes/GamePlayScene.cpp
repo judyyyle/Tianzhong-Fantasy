@@ -27,7 +27,9 @@ int carrotHP = 10;//记录萝卜的血量
 int coinNumber = 1234;//记录当前金币的数量
 Carrot* globalCarrot = nullptr;//萝卜
  std::vector<Monster*> monsters;
-
+BarrierManager* barrierManager = nullptr;  // 管理障碍物 
+Monster* clickedMonster=NULL;//选中的优先攻击怪兽
+Monster* previousSelectedMonster = NULL;
 
 //世界坐标与数组的转换
 static struct array {
@@ -49,6 +51,15 @@ static array vec2_to_array(Vec2 vec) { //返回array类型，即数组
     return arr;
 }
 
+void clearAllVectors() {
+    /*
+    for (auto monster : monsters) {
+        delete monster;
+    }
+    */
+    
+    monsters.clear();
+}
 /*********************  GameMenu  ************************/
 Layer* GameMenu::createLayer() {
     auto layer = GameMenu::create();
@@ -277,7 +288,7 @@ void GameMenu::options() {
 
         // 移除背景
         optionsBackground->removeFromParent();
-        isPause = 0;
+        isPause = 1;
     });
     optionsMenu->addChild(continueGame, 3);
    
@@ -303,6 +314,8 @@ void GameMenu::options() {
     auto returnSelect = MenuItemImage::create("/GamePlayScene/return_normal.png", "/GamePlayScene/return_selected.png");
     returnSelect->setPosition(Vec2(visibleSize.width * 0.492, visibleSize.height * 0.42));
     returnSelect->setCallback([this, blackLayer](Ref* psender) {
+           isPause = 0;
+  clearAllVectors();
         // 跳转到 HelloWorld 场景
         auto helloWorldScene = HelloWorld::createScene();  // 创建 HelloWorld 场景
         Director::getInstance()->replaceScene(helloWorldScene);  // 替换当前场景
@@ -546,8 +559,12 @@ void MAP_SCENE::showBuildFeedback(int row, int col)
         handleTowerClick(row, col);
         updateordeleteTowerPreview(row, col);
     }
-    
     else if (mapGrid[row][col] == BARRIER) {
+        if (clickedMonster != nullptr) {
+            clickedMonster->selected = false;
+            clickedMonster = nullptr;
+        }
+           
         Vec2 clickPosition = array_to_vec2(row, col);
 
         // 假设 BarrierManager 已经被初始化并作为类成员变量
@@ -556,11 +573,16 @@ void MAP_SCENE::showBuildFeedback(int row, int col)
         if (clickedBarrier) {
             // 显示箭头
             clickedBarrier->arrow->setVisible(true);
-
             // 标记为优先攻击目标
-            barrierManager->deselectBarrier();  // 取消之前的选中障碍物
-            barrierManager->selectedBarrier = clickedBarrier;
+             // 取消之前的选中障碍物
+            if (clickedBarrier != barrierManager->selectedBarrier) {
+                barrierManager->deselectBarrier();
+                barrierManager->selectedBarrier = clickedBarrier;
+            }
+            else {
+                barrierManager->deselectBarrier();
 
+            }
         }
     }
 
@@ -639,9 +661,9 @@ void MAP_SCENE::handleTowerClick(int row, int col)
 void MAP_SCENE::addTowerPreview(int row, int col)
 {
     std::vector<std::string> towerImages = {
-        "GamePlayScene/CanClick1.png",
-        "GamePlayScene/CanClick1_shit.png",
-        "GamePlayScene/SunflowerButton.png"
+    (coinNumber < 100) ? "GamePlayScene/CantClickbottle.png" : "GamePlayScene/CanClickbottle.png",
+    (coinNumber < 120) ? "GamePlayScene/CantClickshit.png" : "GamePlayScene/CanClickshit.png",
+    (coinNumber < 200) ? "GamePlayScene/CantClickSun.png" : "GamePlayScene/CanClickSun.png"
     };
 
     // 每个按钮之间的水平间距
@@ -683,6 +705,12 @@ void MAP_SCENE::addTowerPreview(int row, int col)
             if (offsetXForPreview < 0) offsetXForPreview = 0;
             if (offsetYForPreview < 0) offsetYForPreview = 0;
 
+            // 判断图片是否属于 "CantClick" 类，如果是禁用按钮
+            if (towerImages[i].find("CantClick") != std::string::npos)
+            {
+                button->setEnabled(false);  // 禁用按钮，不能点击
+            }
+
             // 设置按钮位置
             button->setPosition(Vec2(offsetXForButton, offsetYForPreview));
             this->addChild(button, 1);
@@ -695,7 +723,6 @@ void MAP_SCENE::addTowerPreview(int row, int col)
         }
     }
 }
-
 
 
 void MAP_SCENE::onTowerPreviewClicked(int towerIndex, int row, int col)
@@ -777,7 +804,7 @@ void MAP_SCENE::updateordeleteTowerPreview(int row, int col)
 
     // 获取塔的升级费用
     int upgradeCost = tower->getUpgradeCost();
-    int sellPrice = tower->getsellPrice();
+   const  int sellPrice = tower->getsellPrice();
 
     // 创建升级按钮
     auto upgradeButton = ui::Button::create("GamePlayScene/CanUpLevel.png");
@@ -836,7 +863,7 @@ void MAP_SCENE::updateordeleteTowerPreview(int row, int col)
     // 删除按钮点击事件：删除塔
     deleteButton->addClickEventListener([this, tower, row, col](Ref* sender) {
         deleteTower(row, col);
-
+        coinNumber += sellPrice;
         // 移除删除按钮
         auto button = dynamic_cast<ui::Button*>(sender);
         if (button != nullptr)
@@ -1011,11 +1038,17 @@ void  MAP_SCENE::initLevel(int level)// 初始化关卡的方法
         Monster* clickedMonster = checkMonsterClicked(touchLocation);
         // 如果点击到怪物，则不执行后续操作
         if (clickedMonster != nullptr) {
-            clickedMonster->selected = true;
-            barrierManager->deselectBarrier();  // 取消之前的选中障碍物        
-            // 点击到怪物，做相应处理（例如，可以高亮显示怪物、处理怪物的其他操作）
-            CCLOG("Clicked on monster: %p", clickedMonster);
-            return;  // 返回，不再执行后续的塔放置操作
+               // 如果当前有选中的怪物，取消选中状态
+           if (previousSelectedMonster != nullptr) {
+           previousSelectedMonster->selected = false;  // 取消之前选中的怪物
+           }
+          // 选中当前点击到的怪物
+          clickedMonster->selected = true;
+          // 保存当前点击的怪物为之前选中的怪物
+          //previousSelectedMonster = clickedMonster;
+          barrierManager->deselectBarrier();  // 取消之前的选中障碍物  
+          CCLOG("Clicked on monster: %p", clickedMonster);
+           return;  // 返回，不再执行后续的塔放置操作
         }
         else{
             // 如果没有点击到怪物，执行地图操作和放置塔
@@ -1240,124 +1273,134 @@ void MAP_SCENE::initializeMapArray(int level) {
         mapGrid[vec2_to_array(Vec2(384 + 64, 768 - 64)).row][vec2_to_array(Vec2(384 + 64, 768 - 64)).col] = BARRIER;
         mapGrid[vec2_to_array(Vec2(384 + 64, 768 + 64)).row][vec2_to_array(Vec2(384 + 64, 768 + 64)).col] = BARRIER;
 
-
-
-
         break;
+  case 2:
+     
+          // 添加不同位置和类型的障碍物
+          barrierManager->BarrierAppear(BARRIER_1_1, 64, 832, 1);
+          barrierManager->BarrierAppear(BARRIER_1_1, 192, 832, 1);
+          barrierManager->BarrierAppear(BARRIER_1_2, 320, 832, 1);
+          barrierManager->BarrierAppear(BARRIER_1_1, 448, 832, 1);
+          barrierManager->BarrierAppear(BARRIER_1_2, 576, 832, 1);
+          barrierManager->BarrierAppear(BARRIER_1_2, 960, 832, 1);
+          barrierManager->BarrierAppear(BARRIER_1_2, 1088, 832, 1);
+          barrierManager->BarrierAppear(BARRIER_1_1, 1472, 832, 1);
+          barrierManager->BarrierAppear(BARRIER_2_1, 1280, 832, 2);
+          barrierManager->BarrierAppear(BARRIER_1_2, 832, 448, 1);
+          barrierManager->BarrierAppear(BARRIER_1_2, 64, 704, 1);
+          barrierManager->BarrierAppear(BARRIER_1_1, 64, 576, 1);
+          barrierManager->BarrierAppear(BARRIER_1_2, 1472, 704, 1);
+          barrierManager->BarrierAppear(BARRIER_1_1, 1472, 576, 1);
+          barrierManager->BarrierAppear(BARRIER_1_2, 1472, 448, 1);
+          barrierManager->BarrierAppear(BARRIER_1_1, 1472, 320, 1);
+          barrierManager->BarrierAppear(BARRIER_1_2, 1472, 192, 1);
+          barrierManager->BarrierAppear(BARRIER_1_1, 1344, 192, 1);
+          barrierManager->BarrierAppear(BARRIER_1_2, 960, 64, 1);
+          barrierManager->BarrierAppear(BARRIER_1_1, 832, 64, 1);
 
-    case 2:
-       
-            // 添加不同位置和类型的障碍物
-            barrierManager->BarrierAppear(BARRIER_1_1, 64, 832, 1);
-            barrierManager->BarrierAppear(BARRIER_1_1, 192, 832, 1);
-            barrierManager->BarrierAppear(BARRIER_1_2, 320, 832, 1);
-            barrierManager->BarrierAppear(BARRIER_1_1, 448, 832, 1);
-            barrierManager->BarrierAppear(BARRIER_1_2, 576, 832, 1);
-            barrierManager->BarrierAppear(BARRIER_1_2, 960, 832, 1);
-            barrierManager->BarrierAppear(BARRIER_1_2, 1088, 832, 1);
-            barrierManager->BarrierAppear(BARRIER_1_1, 1472, 832, 1);
-            barrierManager->BarrierAppear(BARRIER_2_1, 1280, 832, 2);
-            barrierManager->BarrierAppear(BARRIER_1_2, 832, 448, 1);
-            barrierManager->BarrierAppear(BARRIER_1_2, 64, 704, 1);
-            barrierManager->BarrierAppear(BARRIER_1_1, 64, 576, 1);
-            barrierManager->BarrierAppear(BARRIER_1_2, 1472, 704, 1);
-            barrierManager->BarrierAppear(BARRIER_1_1, 1472, 576, 1);
-            barrierManager->BarrierAppear(BARRIER_1_2, 1472, 448, 1);
-            barrierManager->BarrierAppear(BARRIER_1_1, 1472, 320, 1);
-            barrierManager->BarrierAppear(BARRIER_1_2, 1472, 192, 1);
-            barrierManager->BarrierAppear(BARRIER_1_1, 1344, 192, 1);
-            barrierManager->BarrierAppear(BARRIER_1_2, 960, 64, 1);
-            barrierManager->BarrierAppear(BARRIER_1_1, 832, 64, 1);
-            barrierManager->BarrierAppear(BARRIER_2_1, 512, 704, 2);
-            barrierManager->BarrierAppear(BARRIER_2_1, 1152, 64, 2);
-            barrierManager->BarrierAppear(BARRIER_2_1, 768, 320, 2);
-            barrierManager->BarrierAppear(BARRIER_2_2, 512, 576, 2);
-            barrierManager->BarrierAppear(BARRIER_4_1, 128, 384, 4);
-            barrierManager->BarrierAppear(BARRIER_4_1, 512, 256, 4);
-            barrierManager->BarrierAppear(BARRIER_4_1, 1152, 512, 4);
-            barrierManager->BarrierAppear(BARRIER_4_2, 768, 768, 4);
-            barrierManager->BarrierAppear(BARRIER_4_2, 256, 640, 4);
-           
-        
+          barrierManager->BarrierAppear(BARRIER_2_1, 512, 704, 2);
+          barrierManager->BarrierAppear(BARRIER_2_1, 1152, 64, 2);
+          barrierManager->BarrierAppear(BARRIER_2_1, 768, 320, 2);
+          barrierManager->BarrierAppear(BARRIER_2_2, 512, 576, 2);
+          barrierManager->BarrierAppear(BARRIER_4_1, 128, 384, 4);
+          barrierManager->BarrierAppear(BARRIER_4_1, 512, 256, 4);
+          barrierManager->BarrierAppear(BARRIER_4_1, 1152, 512, 4);
+          barrierManager->BarrierAppear(BARRIER_4_2, 768, 768, 4);
+          barrierManager->BarrierAppear(BARRIER_4_2, 256, 640, 4);
+         
+      
 
-       this->addChild(barrierManager);
-       //barrierManager->createMouseEventListener();
-        mapGrid[4][2] = PATH;
-        mapGrid[5][2] = PATH;
-        mapGrid[6][2] = PATH;
-        mapGrid[7][2] = PATH;
-        mapGrid[4][3] = PATH;
-        mapGrid[4][4] = PATH;
-        mapGrid[4][5] = PATH;
-        mapGrid[3][5] = PATH;
-        mapGrid[3][6] = PATH;
-        mapGrid[3][7] = PATH;
-        mapGrid[2][7] = PATH;
-        mapGrid[2][8] = PATH;
-        mapGrid[2][9] = PATH;
-        mapGrid[2][10] = PATH;
-        mapGrid[3][10] = PATH;
-        mapGrid[4][10] = PATH;
-        mapGrid[5][10] = PATH;
-        mapGrid[5][9] = PATH;
-        mapGrid[5][8] = PATH;
-        mapGrid[5][7] = PATH;
-        mapGrid[6][7] = PATH;
-        mapGrid[6][6] = PATH;
-        mapGrid[6][5] = PATH;
-        mapGrid[7][5] = PATH;
-        mapGrid[7][4] = PATH;
-        mapGrid[7][3] = PATH;
-        mapGrid[7][2] = PATH;
+     this->addChild(barrierManager);
+     //barrierManager->createMouseEventListener();
+      mapGrid[4][2] = PATH;
+      mapGrid[5][2] = PATH;
+      mapGrid[6][2] = PATH;
+      mapGrid[7][2] = PATH;
+      mapGrid[4][3] = PATH;
+      mapGrid[4][4] = PATH;
+      mapGrid[4][5] = PATH;
+      mapGrid[3][5] = PATH;
+      mapGrid[3][6] = PATH;
+      mapGrid[3][7] = PATH;
+      mapGrid[2][7] = PATH;
+      mapGrid[2][8] = PATH;
+      mapGrid[2][9] = PATH;
+      mapGrid[2][10] = PATH;
+      mapGrid[3][10] = PATH;
+      mapGrid[4][10] = PATH;
+      mapGrid[5][10] = PATH;
+      mapGrid[5][9] = PATH;
+      mapGrid[5][8] = PATH;
+      mapGrid[5][7] = PATH;
+      mapGrid[6][7] = PATH;
+      mapGrid[6][6] = PATH;
+      mapGrid[6][5] = PATH;
+      mapGrid[7][5] = PATH;
+      mapGrid[7][4] = PATH;
+      mapGrid[7][3] = PATH;
+      mapGrid[7][2] = PATH;
 
-        mapGrid[vec2_to_array(Vec2(64, 832)).row][vec2_to_array(Vec2(64, 832)).col] = BARRIER;
-        mapGrid[vec2_to_array(Vec2(192, 832)).row][vec2_to_array(Vec2(192, 832)).col] = BARRIER;
-        mapGrid[vec2_to_array(Vec2(320, 832)).row][vec2_to_array(Vec2(320, 832)).col] = BARRIER;
-        mapGrid[vec2_to_array(Vec2(448, 832)).row][vec2_to_array(Vec2(448, 832)).col] = BARRIER;
-        mapGrid[vec2_to_array(Vec2(576, 832)).row][vec2_to_array(Vec2(1472, 832)).col] = BARRIER;
-        mapGrid[vec2_to_array(Vec2(960, 832)).row][vec2_to_array(Vec2(960, 832)).col] = BARRIER;
-        mapGrid[vec2_to_array(Vec2(1088, 832)).row][vec2_to_array(Vec2(1088, 832)).col] = BARRIER;
-        mapGrid[vec2_to_array(Vec2(1472, 832)).row][vec2_to_array(Vec2(1472, 832)).col] = BARRIER;
-        mapGrid[vec2_to_array(Vec2(1280, 832)).row][vec2_to_array(Vec2(1280, 832)).col] = BARRIER;
-        mapGrid[vec2_to_array(Vec2(832, 448)).row][vec2_to_array(Vec2(832, 448)).col] = BARRIER;
-        mapGrid[vec2_to_array(Vec2(64, 704)).row][vec2_to_array(Vec2(64, 704)).col] = BARRIER;
-        mapGrid[vec2_to_array(Vec2(64, 576)).row][vec2_to_array(Vec2(64, 576)).col] = BARRIER;
-        mapGrid[vec2_to_array(Vec2(1472, 704)).row][vec2_to_array(Vec2(1472, 704)).col] = BARRIER;
-        mapGrid[vec2_to_array(Vec2(1472, 576)).row][vec2_to_array(Vec2(1472, 576)).col] = BARRIER;
-        mapGrid[vec2_to_array(Vec2(1472, 448)).row][vec2_to_array(Vec2(1472, 448)).col] = BARRIER;
-        mapGrid[vec2_to_array(Vec2(1472, 320)).row][vec2_to_array(Vec2(1472, 320)).col] = BARRIER;
-        mapGrid[vec2_to_array(Vec2(1472, 192)).row][vec2_to_array(Vec2(1472, 192)).col] = BARRIER;
-        mapGrid[vec2_to_array(Vec2(1344, 192)).row][vec2_to_array(Vec2(1344, 192)).col] = BARRIER;
-        mapGrid[vec2_to_array(Vec2(960, 64)).row][vec2_to_array(Vec2(960, 64)).col] = BARRIER;
-        mapGrid[vec2_to_array(Vec2(832, 64)).row][vec2_to_array(Vec2(832, 64)).col] = BARRIER;
-        mapGrid[vec2_to_array(Vec2(512, 704)).row][vec2_to_array(Vec2(512, 704)).col] = BARRIER;
-        mapGrid[vec2_to_array(Vec2(1152, 64)).row][vec2_to_array(Vec2(1152, 64)).col] = BARRIER;
-        mapGrid[vec2_to_array(Vec2(832, 64)).row][vec2_to_array(Vec2(832, 64)).col] = BARRIER;
-        mapGrid[vec2_to_array(Vec2(768, 320)).row][vec2_to_array(Vec2(768, 320)).col] = BARRIER;
-        mapGrid[vec2_to_array(Vec2(512, 576)).row][vec2_to_array(Vec2(512, 576)).col] = BARRIER;
-        //2
-        mapGrid[vec2_to_array(Vec2(128-64, 384)).row][vec2_to_array(Vec2(128-64, 384)).col] = BARRIER;
-        mapGrid[vec2_to_array(Vec2(128+64, 384)).row][vec2_to_array(Vec2(128+64, 384)).col] = BARRIER;
-        mapGrid[vec2_to_array(Vec2(512-64, 256)).row][vec2_to_array(Vec2(512-64, 256)).col] = BARRIER;
-        mapGrid[vec2_to_array(Vec2(512+ 64, 256)).row][vec2_to_array(Vec2(512+64, 256)).col] = BARRIER;
-        //4
-        mapGrid[vec2_to_array(Vec2(1152-64, 512-64)).row][vec2_to_array(Vec2(1152-64, 512-64)).col] = BARRIER;
-        mapGrid[vec2_to_array(Vec2(1152 - 64, 512 +64)).row][vec2_to_array(Vec2(1152 - 64, 512+64)).col] = BARRIER;
-        mapGrid[vec2_to_array(Vec2(1152+ 64, 512 - 64)).row][vec2_to_array(Vec2(1152+64, 512 - 64)).col] = BARRIER;
-        mapGrid[vec2_to_array(Vec2(1152 + 64, 512 + 64)).row][vec2_to_array(Vec2(1152+64, 512+64)).col] = BARRIER;
+      mapGrid[vec2_to_array(Vec2(64, 832)).row][vec2_to_array(Vec2(64, 832)).col] = BARRIER;
+      mapGrid[vec2_to_array(Vec2(192, 832)).row][vec2_to_array(Vec2(192, 832)).col] = BARRIER;
+      mapGrid[vec2_to_array(Vec2(320, 832)).row][vec2_to_array(Vec2(320, 832)).col] = BARRIER;
+      mapGrid[vec2_to_array(Vec2(448, 832)).row][vec2_to_array(Vec2(448, 832)).col] = BARRIER;
+      mapGrid[vec2_to_array(Vec2(576, 832)).row][vec2_to_array(Vec2(1472, 832)).col] = BARRIER;
+      mapGrid[vec2_to_array(Vec2(960, 832)).row][vec2_to_array(Vec2(960, 832)).col] = BARRIER;
+      mapGrid[vec2_to_array(Vec2(1088, 832)).row][vec2_to_array(Vec2(1088, 832)).col] = BARRIER;
+      mapGrid[vec2_to_array(Vec2(1472, 832)).row][vec2_to_array(Vec2(1472, 832)).col] = BARRIER;
+      mapGrid[vec2_to_array(Vec2(1280, 832)).row][vec2_to_array(Vec2(1280, 832)).col] = BARRIER;
+      mapGrid[vec2_to_array(Vec2(832, 448)).row][vec2_to_array(Vec2(832, 448)).col] = BARRIER;
+      mapGrid[vec2_to_array(Vec2(64, 704)).row][vec2_to_array(Vec2(64, 704)).col] = BARRIER;
+      mapGrid[vec2_to_array(Vec2(64, 576)).row][vec2_to_array(Vec2(64, 576)).col] = BARRIER;
+      mapGrid[vec2_to_array(Vec2(1472, 704)).row][vec2_to_array(Vec2(1472, 704)).col] = BARRIER;
+      mapGrid[vec2_to_array(Vec2(1472, 576)).row][vec2_to_array(Vec2(1472, 576)).col] = BARRIER;
+      mapGrid[vec2_to_array(Vec2(1472, 448)).row][vec2_to_array(Vec2(1472, 448)).col] = BARRIER;
+      mapGrid[vec2_to_array(Vec2(1472, 320)).row][vec2_to_array(Vec2(1472, 320)).col] = BARRIER;
+      mapGrid[vec2_to_array(Vec2(1472, 192)).row][vec2_to_array(Vec2(1472, 192)).col] = BARRIER;
+      mapGrid[vec2_to_array(Vec2(1344, 192)).row][vec2_to_array(Vec2(1344, 192)).col] = BARRIER;
+      mapGrid[vec2_to_array(Vec2(960, 64)).row][vec2_to_array(Vec2(960, 64)).col] = BARRIER;
+      mapGrid[vec2_to_array(Vec2(832, 64)).row][vec2_to_array(Vec2(832, 64)).col] = BARRIER;
+    
+      //2
+      mapGrid[vec2_to_array(Vec2(512-64, 704)).row][vec2_to_array(Vec2(512-64, 704)).col] = BARRIER;
+      mapGrid[vec2_to_array(Vec2(512+64, 704)).row][vec2_to_array(Vec2(512+64, 704)).col] = BARRIER;
+      mapGrid[vec2_to_array(Vec2(1152-64, 64)).row][vec2_to_array(Vec2(1152-64, 64)).col] = BARRIER;
+      mapGrid[vec2_to_array(Vec2(1152+64, 64)).row][vec2_to_array(Vec2(1152+64, 64)).col] = BARRIER;
+      mapGrid[vec2_to_array(Vec2(832-64, 64)).row][vec2_to_array(Vec2(832-64, 64)).col] = BARRIER;
+      mapGrid[vec2_to_array(Vec2(832+64, 64)).row][vec2_to_array(Vec2(832+64, 64)).col] = BARRIER;
 
-        mapGrid[vec2_to_array(Vec2(768-64, 768-64)).row][vec2_to_array(Vec2(768-64, 768-64)).col] = BARRIER;
-        mapGrid[vec2_to_array(Vec2(768+64, 768 - 64)).row][vec2_to_array(Vec2(768 + 64, 768 - 64)).col] = BARRIER;
-        mapGrid[vec2_to_array(Vec2(768 - 64, 768 + 64)).row][vec2_to_array(Vec2(768 - 64, 768+64)).col] = BARRIER;
-        mapGrid[vec2_to_array(Vec2(768 + 64, 768 + 64)).row][vec2_to_array(Vec2(768 + 64, 768 + 64)).col] = BARRIER;
+      mapGrid[vec2_to_array(Vec2(768-64, 320)).row][vec2_to_array(Vec2(768-64, 320)).col] = BARRIER;
+      mapGrid[vec2_to_array(Vec2(768 + 64, 320)).row][vec2_to_array(Vec2(768 +64, 320)).col] = BARRIER;
+      mapGrid[vec2_to_array(Vec2(512-64, 576)).row][vec2_to_array(Vec2(512-64, 576)).col] = BARRIER;
+      mapGrid[vec2_to_array(Vec2(512+64, 576)).row][vec2_to_array(Vec2(512+64, 576)).col] = BARRIER;
+       //4
+      mapGrid[vec2_to_array(Vec2(128-64, 384-64)).row][vec2_to_array(Vec2(128-64, 384-64)).col] = BARRIER;
+      mapGrid[vec2_to_array(Vec2(128+64, 384-64)).row][vec2_to_array(Vec2(128+64, 384-64)).col] = BARRIER;
+      mapGrid[vec2_to_array(Vec2(128 - 64, 384+64)).row][vec2_to_array(Vec2(128 - 64, 384 +64)).col] = BARRIER;
+      mapGrid[vec2_to_array(Vec2(128 + 64, 384+64)).row][vec2_to_array(Vec2(128 + 64, 384 +64)).col] = BARRIER;
+      
+      mapGrid[vec2_to_array(Vec2(512-64, 256 - 64)).row][vec2_to_array(Vec2(512-64, 256 - 64)).col] = BARRIER;
+      mapGrid[vec2_to_array(Vec2(512+ 64, 256 - 64)).row][vec2_to_array(Vec2(512+64, 256 - 64)).col] = BARRIER;
+      mapGrid[vec2_to_array(Vec2(512 + 64, 256+64)).row][vec2_to_array(Vec2(512 + 64, 256+64)).col] = BARRIER;
+      mapGrid[vec2_to_array(Vec2(512 - 64, 256+64)).row][vec2_to_array(Vec2(512 - 64, 256+ 64)).col] = BARRIER;
+
+      mapGrid[vec2_to_array(Vec2(1152-64, 512-64)).row][vec2_to_array(Vec2(1152-64, 512-64)).col] = BARRIER;
+      mapGrid[vec2_to_array(Vec2(1152 - 64, 512 +64)).row][vec2_to_array(Vec2(1152 - 64, 512+64)).col] = BARRIER;
+      mapGrid[vec2_to_array(Vec2(1152+ 64, 512 - 64)).row][vec2_to_array(Vec2(1152+64, 512 - 64)).col] = BARRIER;
+      mapGrid[vec2_to_array(Vec2(1152 + 64, 512 + 64)).row][vec2_to_array(Vec2(1152+64, 512+64)).col] = BARRIER;
+
+      mapGrid[vec2_to_array(Vec2(768-64, 768-64)).row][vec2_to_array(Vec2(768-64, 768-64)).col] = BARRIER;
+      mapGrid[vec2_to_array(Vec2(768+64, 768 - 64)).row][vec2_to_array(Vec2(768 + 64, 768 - 64)).col] = BARRIER;
+      mapGrid[vec2_to_array(Vec2(768 - 64, 768 + 64)).row][vec2_to_array(Vec2(768 - 64, 768+64)).col] = BARRIER;
+      mapGrid[vec2_to_array(Vec2(768 + 64, 768 + 64)).row][vec2_to_array(Vec2(768 + 64, 768 + 64)).col] = BARRIER;
 
 
-        mapGrid[vec2_to_array(Vec2(256-64, 640-64)).row][vec2_to_array(Vec2(256-64, 640-64)).col] = BARRIER;
-        mapGrid[vec2_to_array(Vec2(256-64, 640+64)).row][vec2_to_array(Vec2(256-64, 640+64)).col] = BARRIER;
-        mapGrid[vec2_to_array(Vec2(256+64, 640-64)).row][vec2_to_array(Vec2(256+64, 640-64)).col] = BARRIER;
-        mapGrid[vec2_to_array(Vec2(256 + 64, 640+64)).row][vec2_to_array(Vec2(256 + 64, 640+64)).col] = BARRIER;
+      mapGrid[vec2_to_array(Vec2(256-64, 640-64)).row][vec2_to_array(Vec2(256-64, 640-64)).col] = BARRIER;
+      mapGrid[vec2_to_array(Vec2(256-64, 640+64)).row][vec2_to_array(Vec2(256-64, 640+64)).col] = BARRIER;
+      mapGrid[vec2_to_array(Vec2(256+64, 640-64)).row][vec2_to_array(Vec2(256+64, 640-64)).col] = BARRIER;
+      mapGrid[vec2_to_array(Vec2(256 + 64, 640+64)).row][vec2_to_array(Vec2(256 + 64, 640+64)).col] = BARRIER;
 
-        break;
+      break;
 
     }
 }
