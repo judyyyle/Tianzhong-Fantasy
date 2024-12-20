@@ -780,6 +780,7 @@ void MAP_SCENE::clearWarningSprites()
 
 ui::Button* currentUpgradeButton = nullptr;  // 全局变量，用于记录当前的升级按钮
 ui::Button* currentDeleteButton = nullptr;  // 全局变量，用于记录当前的删除按钮
+
 void MAP_SCENE::updateordeleteTowerPreview(int row, int col)
 {
     // 如果有其他按钮，先移除它们
@@ -803,32 +804,40 @@ void MAP_SCENE::updateordeleteTowerPreview(int row, int col)
     }
 
     // 获取塔的升级费用
-    int upgradeCost = tower->getUpgradeCost();
-   const  int sellPrice = tower->getsellPrice();
+   const int upgradeCost = tower->getUpgradeCost();
+   const int sellPrice = tower->getsellPrice();
 
-    // 创建升级按钮
-    auto upgradeButton = ui::Button::create("GamePlayScene/CanUpLevel.png");
-    upgradeButton->setPosition(array_to_vec2(row, col) + Vec2(0, 80));  // 按钮位置
-    upgradeButton->setTitleText(std::to_string(upgradeCost));           // 设置显示升级费用
-    upgradeButton->setTitleColor(Color3B::BLACK);
-    upgradeButton->setTitleFontSize(20);
-    auto up_label = upgradeButton->getTitleLabel();
-    up_label->setPosition(Vec2(upgradeButton->getContentSize().width / 2 + 8,
-        upgradeButton->getContentSize().height / 2) + Vec2(0, -25));
-    if (tower->getLevel() == 3)
-    {
-        upgradeButton->loadTextures("GamePlayScene/cant_update.PNG", "GamePlayScene/cant_update.PNG", "");  // 显示“已达最大级别”提示
-        upgradeButton->setTitleText("");  // 清空按钮的文字
+   // 创建升级按钮
+   auto upgradeButton = ui::Button::create("GamePlayScene/CanUpLevel.png");
 
-    }
-    this->addChild(upgradeButton, 2);
+   if (coinNumber < tower->getUpgradeCost())
+   {
+       upgradeButton->loadTextures("GamePlayScene/CantUpLevel.PNG", "GamePlayScene/CantUpLevel.PNG", "");  // 显示“已达最大级别”提示
+       upgradeButton->setEnabled(false);  // 禁用按钮，无法点击
+   }
+   upgradeButton->setPosition(array_to_vec2(row, col) + Vec2(0, 80));  // 按钮位置
+   upgradeButton->setTitleText(std::to_string(upgradeCost));           // 设置显示升级费用
+   upgradeButton->setTitleColor(Color3B::BLACK);
+   upgradeButton->setTitleFontSize(20);
+   auto up_label = upgradeButton->getTitleLabel();
+   up_label->setPosition(Vec2(upgradeButton->getContentSize().width / 2 + 8,
+       upgradeButton->getContentSize().height / 2) + Vec2(0, -25));
 
-    // 保存当前升级按钮
-    currentUpgradeButton = upgradeButton;
+   if (tower->getLevel() == 3)
+   {
+       upgradeButton->loadTextures("GamePlayScene/cant_update.PNG", "GamePlayScene/cant_update.PNG", "");  // 显示“已达最大级别”提示
+       upgradeButton->setTitleText("");  // 清空按钮的文字
+       upgradeButton->setEnabled(false);  // 禁用按钮，无法点击
+   }
 
+   this->addChild(upgradeButton, 2);
+
+   // 保存当前升级按钮
+   currentUpgradeButton = upgradeButton;
     // 按钮点击事件：执行升级并移除按钮
-    upgradeButton->addClickEventListener([this, tower, row, col](Ref* sender) {
+    upgradeButton->addClickEventListener([this, tower, row, col, upgradeCost](Ref* sender) mutable{
         upgradeTower(row, col);
+        coinNumber -= upgradeCost;
 
         // 升级后移除按钮
         auto button = dynamic_cast<ui::Button*>(sender);
@@ -861,7 +870,7 @@ void MAP_SCENE::updateordeleteTowerPreview(int row, int col)
     currentDeleteButton = deleteButton;
 
     // 删除按钮点击事件：删除塔
-    deleteButton->addClickEventListener([this, tower, row, col](Ref* sender) {
+    deleteButton->addClickEventListener([this, tower, row, col, sellPrice](Ref* sender) mutable {
         deleteTower(row, col);
         coinNumber += sellPrice;
         // 移除删除按钮
@@ -889,30 +898,37 @@ void MAP_SCENE::updateordeleteTowerPreview(int row, int col)
         Vec2 location = this->convertToNodeSpace(touch->getLocation());
 
         // 如果点击不在按钮范围内，移除所有按钮
-        if (currentUpgradeButton != nullptr &&
-            !currentUpgradeButton->getBoundingBox().containsPoint(location))
+        if (currentUpgradeButton != nullptr)
         {
-            currentUpgradeButton->removeFromParent();
-            currentUpgradeButton = nullptr;
-            cocos2d::log("点击在按钮外，移除升级按钮！");
+            // 检查升级按钮是否禁用且点击不在按钮范围内
+            if (!currentUpgradeButton->isEnabled() ||
+                !currentUpgradeButton->getBoundingBox().containsPoint(location))
+            {
+                currentUpgradeButton->removeFromParent();
+                currentUpgradeButton = nullptr;
+                cocos2d::log("点击在按钮外或按钮禁用，移除升级按钮！");
+            }
         }
 
-        if (currentDeleteButton != nullptr &&
-            !currentDeleteButton->getBoundingBox().containsPoint(location))
+        if (currentDeleteButton != nullptr)
         {
-            currentDeleteButton->removeFromParent();
-            currentDeleteButton = nullptr;
-            cocos2d::log("点击在按钮外，移除删除按钮！");
+            // 检查删除按钮是否禁用且点击不在按钮范围内
+            if (!currentDeleteButton->isEnabled() ||
+                !currentDeleteButton->getBoundingBox().containsPoint(location))
+            {
+                currentDeleteButton->removeFromParent();
+                currentDeleteButton = nullptr;
+                cocos2d::log("点击在按钮外或按钮禁用，移除删除按钮！");
+            }
         }
 
-        return false;  // 返回 false，不阻止事件继续传递
+        return false;
+        // 返回 false，不阻止事件继续传递
         };
 
     // 将事件监听器注册到场景
     _eventDispatcher->addEventListenerWithSceneGraphPriority(touchListener, this);
 }
-
-
 
 void MAP_SCENE::deleteTower(int row, int col)
 {
