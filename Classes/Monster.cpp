@@ -2,8 +2,6 @@
 #include "Monster.h"
 #include <string>
 
-extern int carrot_HP;//萝卜血量
-extern Carrot* globalCarrot;//萝卜
 extern int coinNumber;
 extern std::vector<Bullet*> bullets;
 extern std::vector<Sunflowerfire*>sunflowers;
