@@ -735,14 +735,17 @@ void MAP_SCENE::onTowerPreviewClicked(int towerIndex, int row, int col)
     case 0:
         // 创建 BottleTower 实例
         tower = BottleTower::create("GamePlayScene/bottle_level_1.png");
+        coinNumber -= 100;
         break;
     case 1:
         // 创建 ShitTower 
         tower = ShitTower::create("GamePlayScene/shit_level_1.png");
+        coinNumber -= 120;
         break;
     case 2:
         // 创建 SunflowerTower 
         tower = SunflowerTower::create("GamePlayScene/sunflower_level_1.png");
+        coinNumber -=200;
         break;
     default:
         return; // 如果没有匹配的塔类型，直接返回
