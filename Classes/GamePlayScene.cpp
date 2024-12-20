@@ -193,8 +193,15 @@ bool GameMenu::init()
     auto waves_txt = Label::createWithTTF("/ " + std::to_string(allWaves) + " Waves", "/fonts/TMON Monsori.ttf", 40);
     waves_txt->setPosition(Vec2(origin.x + visibleSize.width * 0.525,
         origin.y + visibleSize.height * 0.94 + 16));
-    this->addChild(waves_txt);
- 
+    this->addChild(waves_txt)；
+    if (level == 2) {
+        waves_image->setVisible(false);
+        waves_label->setVisible(false);
+        waves_txt->setVisible(false);
+        auto hp = Sprite::create("/Monster/Hp/boss_hp.png");
+        hp->setPosition(704, 980);
+        this->addChild(hp, 3);
+    }
     // 定时更新波数显示
     this->schedule([waves_label](float dt) {
         // 更新波数显示
