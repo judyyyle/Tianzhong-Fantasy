@@ -171,7 +171,14 @@ bool GameMenu::init()
     coin_number->setName("CoinNumber");
     coin_number->setPosition(282, 980);
     this->addChild(coin_number);
+ 
+    // 定时更新金币数值
+    this->schedule([coin_number](float dt) {
+        // 更新金币数值
+        coin_number->setString(std::to_string(coinNumber));
+        }, 0.1f, "update_coin_key");
     coin_number->setString(std::to_string(coinNumber));// 更新金币数值显示
+ 
     //波数显示
     auto waves_image = Sprite::create("/GamePlayScene/wave_number.png");
     waves_image->setPosition(Vec2(origin.x + visibleSize.width * 0.4,
@@ -187,6 +194,13 @@ bool GameMenu::init()
     waves_txt->setPosition(Vec2(origin.x + visibleSize.width * 0.525,
         origin.y + visibleSize.height * 0.94 + 16));
     this->addChild(waves_txt);
+ 
+    // 定时更新波数显示
+    this->schedule([waves_label](float dt) {
+        // 更新波数显示
+        waves_label->setString(std::to_string(currentWave / 10 % 10) + "    " + std::to_string(currentWave % 10));
+        }, 0.1f, "update_wave_key");
+ 
     //暂停开关：初始isPause=0，如勾选则暂停
     auto paused = Sprite::create("/GamePlayScene/paused.png");
     paused->setScale(1.4);
