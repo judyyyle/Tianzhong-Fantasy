@@ -3,27 +3,20 @@
 
 #include<string>
 #include<vector>
-
+#include "Bullet.h"
+#include "GamePlayScene.h"
 #include "cocos2d.h"
-
+USING_NS_CC;
 using namespace cocos2d;
 
-/*
-* #define BARRIER_1_1 0
-#define BARRIER_1_2 1
-#define BARRIER_2_1 2
-#define BARRIER_2_2 3
-#define BARRIER_4_1 4
-#define BARRIER_4_2 5 
-*/
 extern int mapGrid[8][12];
+extern int coinNumber;
+extern std::vector<Bullet*> bulletsTowardBarrier;
 
 #define PATH -1
 #define SPACE 0
 #define BARRIER 1
 #define EXISTED_TOWER 2
-
-
 
 //世界坐标与数组的转换
 static struct array_BA {
@@ -60,6 +53,9 @@ public:
     int Type = 1;
     int gridX = -1;  
     int gridY = -1; 
+
+    Bullet* closestBullet = nullptr; // 最近的子弹
+
     // 初始化障碍物
     bool initWithParams(const std::string& spritePath, const Vec2& position, int initialHp,int type) {
         // 创建障碍物
@@ -69,8 +65,8 @@ public:
         this->addChild(barrierSprite);
 
         // 初始化血量
-        maxHp = initialHp * 8;
-        hp = initialHp * 8;
+        maxHp = initialHp * 100;
+        hp = initialHp * 100;
         Type = type;
         gridX=position.x;
         gridY = position.y ;
@@ -85,7 +81,7 @@ public:
         hpSlider = Sprite::create("/Barrier/HpSlider.png");
         hpSlider->setAnchorPoint(Vec2(0, 0.5));
         hpSlider->setPosition(Vec2(hpHolder->getPositionX() - hpHolder->getContentSize().width / 2,
-            hpHolder->getPositionY()));
+        hpHolder->getPositionY()));
         hpSlider->setVisible(false);
         this->addChild(hpSlider);
 
@@ -94,6 +90,8 @@ public:
         arrow->setPosition(Vec2(barrierSprite->getPositionX(), hpHolder->getPositionY() + 19));
         arrow->setVisible(false);
         this->addChild(arrow);
+
+        this->scheduleUpdate();  // 定期调用 update 函数
 
         return true;
     }
@@ -107,10 +105,17 @@ public:
 
     // 隐藏血条
     void hideHpBar() {
-        hpHolder->setVisible(false);
-        hpSlider->setVisible(false);
-        arrow->setVisible(false);
+        if (hpHolder) {
+            hpHolder->setVisible(false);
+        }
+        if (hpSlider) {
+            hpSlider->setVisible(false);
+        }
+        if (arrow) {
+            arrow->setVisible(false);
+        }
     }
+
 
     // 更新血量
     void takeDamage(int damage) {
@@ -126,10 +131,85 @@ public:
 
     // 移除障碍物及血条
     void removeFromScene() {
-        if (barrierSprite) barrierSprite->removeFromParent();
-        if (hpHolder) hpHolder->removeFromParent();
-        if (hpSlider) hpSlider->removeFromParent();
-        if (arrow) arrow->removeFromParent();
+        if (barrierSprite) {
+            if (Type == 1) {
+                coinNumber += 50;
+            }
+            else if (Type == 2) {
+                coinNumber += 100;
+            }
+            else if (Type == 4) {
+                coinNumber += 200;
+            }
+            barrierSprite->removeFromParent();
+            barrierSprite = nullptr;
+        }
+        if (hpHolder) {
+            hpHolder->removeFromParent();
+            hpHolder = nullptr;
+        }
+        if (hpSlider) {
+            hpSlider->removeFromParent();
+            hpSlider = nullptr;
+        }
+        if (arrow) {
+            arrow->removeFromParent();
+            arrow = nullptr;
+        }
+    }
+
+    // 查找最近的子弹
+    void findNearestBullet() {
+        closestBullet = nullptr; // 初始化最近的子弹为空
+
+        // 检查 barrierSprite 是否有效
+        if (!barrierSprite) {
+            CCLOG("Error: barrierSprite is nullptr");
+            return;
+        }
+
+        for (auto bullet : bulletsTowardBarrier) {
+            // 检查 bullet 是否有效
+            if (!bullet) {
+                CCLOG("Warning: bullet is nullptr");
+                continue;
+            }
+
+            Vec2 bulletPos = bullet->getPosition();
+
+            // 检查 barrierSprite 的边界是否包含子弹位置
+            if (barrierSprite->getBoundingBox().containsPoint(bulletPos)) {
+                closestBullet = bullet;
+                break; // 找到第一个满足条件的子弹后立即退出
+            }
+        }
+    }
+
+    // 每帧调用的更新方法
+    void update(float dt) {
+        // 更新障碍物逻辑
+        findNearestBullet();  // 查找最近的子弹
+        if (closestBullet != nullptr) {
+            // 如果找到最近的子弹，处理伤害
+            takeDamage(closestBullet->GetDamage());
+            showHpBar();  // 显示血条
+
+            // 如果血量为 0，移除障碍物
+            if (isDead()) {
+                removeFromScene();
+                
+            }
+
+            if (closestBullet) {
+                closestBullet->removeFromParent();  // 从父节点移除子弹
+                // 从 bullets 容器中移除自身
+                auto it = std::find(bulletsTowardBarrier.begin(), bulletsTowardBarrier.end(), closestBullet);
+                if (it != bulletsTowardBarrier.end()) {
+                    bulletsTowardBarrier.erase(it);
+                }
+                closestBullet = NULL;
+            }
+        }
     }
 };
 
@@ -139,12 +219,13 @@ public:
     CREATE_FUNC(BarrierManager);
 
     Vector<BarrierInfo*> barriers;      // 存储所有障碍物
-    BarrierInfo* selectedBarrier = nullptr;  // 当前选中的障碍物
+    BarrierInfo* selectedBarrier;  // 当前选中的障碍物
 
     // 初始化障碍物
     void BarrierAppear(int type, float positionX, float positionY, int initialHp) {
         // 障碍物的图片路径
         std::string picture[] = {
+    
             "Barrier/one1.png", "Barrier/one2.png",
             "Barrier/two1.png", "Barrier/two2.png",
             "Barrier/four1.png", "Barrier/four2.png"
@@ -156,17 +237,16 @@ public:
             this->addChild(barrierInfo);
             barriers.pushBack(barrierInfo);
         }
+
     }
 
     // 鼠标点击事件监听器
-    void createMouseEventListener() {
+   void createMouseEventListener() {
         auto listener = EventListenerMouse::create();
-
         listener->onMouseDown = [this](Event* event) {
             auto mouseEvent = dynamic_cast<EventMouse*>(event);
             Vec2 clickPosition = mouseEvent->getLocationInView();
             clickPosition = this->convertToNodeSpace(clickPosition);
-
             // 判断是否点击障碍物
             BarrierInfo* clickedBarrier = getClickedBarrier(clickPosition);
             if (clickedBarrier) {
@@ -174,10 +254,7 @@ public:
                 deselectBarrier();  // 取消之前的选中状态
                 selectedBarrier = clickedBarrier;
                 selectedBarrier->showHpBar();
-
-
                 selectedBarrier->takeDamage(1);  // 示例：点击后减少 1 点血量
-
                 // 如果障碍物血量为 0，移除障碍物
                 if (selectedBarrier->isDead()) {
                     removeBarrier(selectedBarrier);
@@ -192,7 +269,7 @@ public:
 
         _eventDispatcher->addEventListenerWithSceneGraphPriority(listener, this);
     }
-
+    
     // 根据点击位置获取障碍物
     BarrierInfo* getClickedBarrier(const Vec2& position) {
         for (auto& info : barriers) {
@@ -203,30 +280,6 @@ public:
         return nullptr;
     }
 
-    // 移除障碍物
-    void removeBarrier(BarrierInfo* barrierInfo) {
-        barriers.eraseObject(barrierInfo);
-        barrierInfo->removeFromScene();
-        if (barrierInfo->Type == 0 || barrierInfo->Type == 1) {
-           mapGrid[vec2_to_array_BA(Vec2(barrierInfo->gridX, barrierInfo->gridY)).row][vec2_to_array_BA(Vec2(barrierInfo->gridX, barrierInfo->gridY)).col] = SPACE;
-        }
-        else if (barrierInfo->Type == 2 || barrierInfo->Type == 3) {
-          
-            mapGrid[vec2_to_array_BA(Vec2(barrierInfo->gridX-64, barrierInfo->gridY)).row][vec2_to_array_BA(Vec2(barrierInfo->gridX-64, barrierInfo->gridY)).col] = SPACE;
-            mapGrid[vec2_to_array_BA(Vec2(barrierInfo->gridX+64, barrierInfo->gridY)).row][vec2_to_array_BA(Vec2(barrierInfo->gridX+64, barrierInfo->gridY)).col] = SPACE;
-        
-        }
-        else if (barrierInfo->Type == 4 || barrierInfo->Type == 5) {
-            mapGrid[vec2_to_array_BA(Vec2(barrierInfo->gridX-64, barrierInfo->gridY-64)).row][vec2_to_array_BA(Vec2(barrierInfo->gridX-64, barrierInfo->gridY-64)).col] = SPACE;
-            mapGrid[vec2_to_array_BA(Vec2(barrierInfo->gridX + 64, barrierInfo->gridY - 64)).row][vec2_to_array_BA(Vec2(barrierInfo->gridX + 64, barrierInfo->gridY - 64)).col] = SPACE;
-            mapGrid[vec2_to_array_BA(Vec2(barrierInfo->gridX - 64, barrierInfo->gridY + 64)).row][vec2_to_array_BA(Vec2(barrierInfo->gridX - 64, barrierInfo->gridY + 64)).col] = SPACE;
-            mapGrid[vec2_to_array_BA(Vec2(barrierInfo->gridX + 64, barrierInfo->gridY + 64)).row][vec2_to_array_BA(Vec2(barrierInfo->gridX + 64, barrierInfo->gridY + 64)).col] = SPACE;
-        }
-
-        
-
-    }
-
     // 取消选中障碍物
     void deselectBarrier() {
         if (selectedBarrier) {
@@ -234,9 +287,49 @@ public:
             selectedBarrier = nullptr;
         }
     }
+
+    // 更新障碍物状态
+    void update(float dt) {
+        for (auto barrier : barriers) {
+            barrier->update(dt);  // 调用每个障碍物的 update 方法
+
+            // 如果障碍物死亡，移除它
+            if (barrier->isDead()) {
+                removeBarrier(barrier);
+            }
+        }
+    }
+
+    // 移除障碍物
+    void removeBarrier(BarrierInfo* barrierInfo) {
+        if (barrierInfo) {
+            // 确保清理选中障碍物的指针
+            if (selectedBarrier == barrierInfo) {
+                selectedBarrier = nullptr;
+            }
+
+            // 从 barriers 容器中移除
+            barriers.eraseObject(barrierInfo);
+
+            // 调用障碍物的移除逻辑
+            barrierInfo->removeFromScene();
+
+            // 更新 mapGrid 状态
+            if (barrierInfo->Type == 1) {
+                mapGrid[vec2_to_array_BA(Vec2(barrierInfo->gridX, barrierInfo->gridY)).row][vec2_to_array_BA(Vec2(barrierInfo->gridX, barrierInfo->gridY)).col] = SPACE;
+            }
+            else if (barrierInfo->Type == 2) {
+                mapGrid[vec2_to_array_BA(Vec2(barrierInfo->gridX - 64, barrierInfo->gridY)).row][vec2_to_array_BA(Vec2(barrierInfo->gridX - 64, barrierInfo->gridY)).col] = SPACE;
+                mapGrid[vec2_to_array_BA(Vec2(barrierInfo->gridX + 64, barrierInfo->gridY)).row][vec2_to_array_BA(Vec2(barrierInfo->gridX + 64, barrierInfo->gridY)).col] = SPACE;
+            }
+            else if (barrierInfo->Type == 4) {
+                mapGrid[vec2_to_array_BA(Vec2(barrierInfo->gridX - 64, barrierInfo->gridY - 64)).row][vec2_to_array_BA(Vec2(barrierInfo->gridX - 64, barrierInfo->gridY - 64)).col] = SPACE;
+                mapGrid[vec2_to_array_BA(Vec2(barrierInfo->gridX + 64, barrierInfo->gridY - 64)).row][vec2_to_array_BA(Vec2(barrierInfo->gridX + 64, barrierInfo->gridY - 64)).col] = SPACE;
+                mapGrid[vec2_to_array_BA(Vec2(barrierInfo->gridX - 64, barrierInfo->gridY + 64)).row][vec2_to_array_BA(Vec2(barrierInfo->gridX - 64, barrierInfo->gridY + 64)).col] = SPACE;
+                mapGrid[vec2_to_array_BA(Vec2(barrierInfo->gridX + 64, barrierInfo->gridY + 64)).row][vec2_to_array_BA(Vec2(barrierInfo->gridX + 64, barrierInfo->gridY + 64)).col] = SPACE;
+            }
+        }
+    }
 };
-
-
-
 
 #endif // BARRIER_MANAGER_H
