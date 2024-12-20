@@ -2,6 +2,10 @@
 #include "Monster.h"
 #include <string>
 
+/*******************************/
+extern int carrot_HP;//萝卜血量
+extern Carrot* globalCarrot;//萝卜
+/*******************************/
 extern int coinNumber;
 extern std::vector<Bullet*> bullets;
 extern std::vector<Sunflowerfire*>sunflowers;
@@ -265,6 +269,15 @@ void Monster::update(float dt) {
             type.is_slowing = false;
             type.slowing_time = 0;
             type.speed /= 0.8;
+        }
+    }
+    if (path[path_count].direction == STOP) {
+        // 更新萝卜血量
+        carrotHP--;  // 假设 carrotHP 是全局变量
+
+        // 调用 Carrot 类的 updateDisplay 来更新萝卜血量和形象
+        if (globalCarrot) {
+            globalCarrot->updateDisplay();  // 更新萝卜显示
         }
     }
     //太阳花攻击
