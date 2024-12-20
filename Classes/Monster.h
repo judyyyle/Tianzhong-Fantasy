@@ -168,7 +168,15 @@ public:
         //出怪特效
         auto effect = Sprite::create("/MonsterStart/monster_appear_effect.png");
         effect->setContentSize(Size(60, 60));
-        effect->setPosition(192, 704);
+        if (level == 0) {
+            effect->setPosition(Vec2(192, 704));
+        }
+        else if (level == 1) {
+            effect->setPosition(Vec2(90, 594));
+        }
+        else if (level == 2) {
+            effect->setPosition(Vec2(704, 576));
+        }
         this->getParent()->addChild(effect, 3);
         // 出怪放大、淡出特效
         auto monsterScaleEffect = ScaleTo::create(0.2f, 3.0f); // 0.5秒放大到3.5倍
