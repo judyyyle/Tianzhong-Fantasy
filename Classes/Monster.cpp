@@ -1,22 +1,12 @@
 #include "HelloWorldScene.h"
-
 #include "Monster.h"
-
 #include <string>
 
-
-/*
 extern int carrot_HP;//萝卜血量
-
-extern int monster_number;//怪物总数
-extern int monster_wave_number;//怪物攻击波束
-extern int barrier_number;//障碍总数
-extern std::vector<Monster*>monster;
-extern std::vector<Monster*>barrier;
-
-extern Monster* destination;//怪物位置
-
-*/
+extern Carrot* globalCarrot;//萝卜
+extern int coinNumber;
+extern std::vector<Bullet*> bullets;
+extern std::vector<Sunflowerfire*>sunflowers;
 
 //定义一个结构体，表示二维数组中的位置
 static struct arr_mon {
@@ -47,8 +37,10 @@ bool Monster::init() {
 
 //初始化怪物的类型和路径
 void Monster::initType(int monster_type, int map_type) {
+    monster_type = m;
     path_count = 0;
     isRemoved = false;
+    selected = false;
     //根据地图类型 (map_type) 设置不同的路径
     switch (map_type) {
     case ADVENTURE1:
@@ -94,21 +86,27 @@ void Monster::initType(int monster_type, int map_type) {
 
     //设置不同怪物类型的血量、最大血量和速度
     MonsterType types[MONSTER_TOTAL];
-    types[NORMAL] = { 100,100,100,false,0 };
-    types[FAST] = { 80,80,150,false,0 };
-    types[HUGE] = { 120,120,80,false,0 };
+    types[NORMAL] = { currentWave * 30,currentWave * 30,100,false,0 };
+    types[HUGE] = { currentWave * 40,currentWave * 40,80,false,0 };
+    types[FAST] = { currentWave * 20,currentWave * 20,170,false,0 };
     types[BOSS] = { 1000,1000,50,false,0 };
 
     //图片数组，即各怪物的图片
     std::string picture_1[MONSTER_TOTAL] = { "/Monster/Normal_1.png","/Monster/Huge_1.png","/Monster/Fast_1.png" ,"/Monster/Boss_1.png" };
-    std::string picture_2[MONSTER_TOTAL] = { "/Monster/Normal_2.png","/Monster/Huge_2.png","/Monster/Fast_2.png","/Monster/Boss_1.png" };
+    std::string picture_2[MONSTER_TOTAL] = { "/Monster/Normal_2.png","/Monster/Huge_2.png","/Monster/Fast_2.png","/Monster/Boss_2.png" };
 
     //动画帧数组，用于怪物的动画
     Vector<SpriteFrame*> animFrames;
     animFrames.reserve(2);
-    animFrames.pushBack(SpriteFrame::create(picture_1[monster_type], Rect(0, 0, 128, 128)));
-    animFrames.pushBack(SpriteFrame::create(picture_2[monster_type], Rect(0, 0, 128, 128)));
-
+    if (monster_type == BOSS) {
+        animFrames.pushBack(SpriteFrame::create(picture_1[monster_type], Rect(0, 0, 150, 150)));
+        animFrames.pushBack(SpriteFrame::create(picture_2[monster_type], Rect(0, 0, 150, 150)));
+    }
+    else {
+        animFrames.pushBack(SpriteFrame::create(picture_1[monster_type], Rect(0, 0, 128, 128)));
+        animFrames.pushBack(SpriteFrame::create(picture_2[monster_type], Rect(0, 0, 128, 128)));
+    }
+    
     //创建动画
     Animation* animation = Animation::createWithSpriteFrames(animFrames, 0.1f);
     Animate* animate = Animate::create(animation);
@@ -135,46 +133,40 @@ void Monster::initType(int monster_type, int map_type) {
     //开始播放动画
     this->runAction(RepeatForever::create(animate)->clone());
 
-    //初始化血条
-    hp_border = Sprite::create("/Monster/Hp/HpBorder.png");
-    hp = Sprite::create("/Monster/Hp/Hp.png");
-    hp_border->setAnchorPoint(Vec2(0, 0.5));
-    hp->setAnchorPoint(Vec2(0, 0.5));
+    if (monster_type != BOSS) {
+        //初始化血条
+        hp_border = Sprite::create("/Monster/Hp/HpBorder.png");
+        hp = Sprite::create("/Monster/Hp/Hp.png");
+        hp_border->setAnchorPoint(Vec2(0, 0.5));
+        hp->setAnchorPoint(Vec2(0, 0.5));
 
-    //根据怪物类型调整血条的位置
-    if (monster_type == FAST) {
-        hp_border->setPosition(35, 130);
-        hp->setPosition(35, 130);
+        //根据怪物类型调整血条的位置
+        if (monster_type == FAST) {
+            hp_border->setPosition(35, 130);
+            hp->setPosition(35, 130);
+        }
+        else {
+            hp_border->setPosition(25, 130);
+            hp->setPosition(25, 130);
+        }
+
+        //将血条添加到怪物的子节点中
+        this->addChild(hp_border);
+        this->addChild(hp);
     }
     else {
-        hp_border->setPosition(25, 130);
-        hp->setPosition(25, 130);
+        hp = NULL;
+        hp_border = NULL;
     }
-
-    //将血条添加到怪物的子节点中
-    this->addChild(hp_border);
-    this->addChild(hp);
-
     closestBullet = NULL;
 }
 
 void Monster::findNearestBullet() {
-    float minDistance = 20.0f;
-    Vec2 myPos = this->getPosition();
     for (auto bullet : bullets) {
-        /*
-        cocos2d::Vec2 bulletPos = bullet->getPosition();
-        float distance = myPos.distance(bulletPos);
-        if (distance < 15.0f && distance < minDistance) {
-            minDistance = distance;
-            closestBullet = bullet;
-        }
-        */
         Vec2 bulletPos = bullet->getPosition();
         if (this->getBoundingBox().containsPoint(bulletPos))
             //if(bullet->getBoundingBox().containsPoint(myPos))
             closestBullet = bullet;
-
     }
 }
 
@@ -184,7 +176,38 @@ void Monster::update(float dt) {
     if (isPause) {
         return;
     }
-
+    //BOSS的血条初始化
+    if (monster_type == BOSS) {
+        if (hp == NULL) {
+            hp_border = Sprite::create("/Monster/Hp/boss_hp_border.png");
+            hp = Sprite::create("/Monster/Hp/boss_hp.png");
+            hp_border->setPosition(704, 980);
+            cocos2d::Rect rect=hp_border->getBoundingBox();
+            hp->setAnchorPoint(Vec2(0, 0.5));
+            hp->setPosition(384,980);
+            this->getParent()->addChild(hp_border, 3);
+            this->getParent()->addChild(hp,3);
+        }
+    }
+    //选择怪物
+    if (selected == true) {
+        if (arrow == NULL) {
+            arrow= Sprite::create("/Barrier/arrow.png");
+            arrow->setPosition(60,150);
+            this->addChild(arrow);
+        }
+    }
+    else {
+        if (arrow) {
+            arrow->removeFromParent();
+            arrow = NULL;
+        }         
+    }
+    //实现BOSS关卡的循环
+    if (path_count >= path_total) {
+        path_count %= path_total;
+    }
+    
     //计算当前怪物在路径上的位置（根据路径的 x 和 y 增量）
     float now_x = this->getPositionX() + path[path_count].x * dt * type.speed;
     float now_y = this->getPositionY() + path[path_count].y * dt * type.speed;
@@ -230,12 +253,6 @@ void Monster::update(float dt) {
 
     //减速状态
     if (type.is_slowing == true) {
-        //如果是第一次减速（即首次进入减速状态），调用 createSlowAnimation 函数产生减速特效
-        if (type.slowing_time == 0) {
-            type.speed *= 0.8;
-            createSlowAnimation(now_x, now_y);
-        }
-
         type.slowing_time += dt;
 
         //停止减速
@@ -252,12 +269,73 @@ void Monster::update(float dt) {
             type.speed /= 0.8;
         }
     }
+    //太阳花攻击
+    bool sun_attacked = false;
+    for (auto sunflower : sunflowers) {
+        cocos2d::Rect fire_rect = sunflower->getBoundingBox();
+        SunFire* target = NULL;
+        for (auto& fire : fires) {
+            if (fire.sun_fire == sunflower)
+                target = &fire;
+        }
+        //受到攻击
+        if (sunflower->getBoundingBox().containsPoint(this->getPosition())) {
+            //新攻击，加入vector
+            if (target == NULL) {
+                SunFire new_fire(sunflower, true);
+                fires.push_back(new_fire);
+                type.hp -= sunflower->GetDamage();
+                sun_attacked = true;
+            }
+            //未攻击，实行攻击
+            else if (target->attacked == false) {
+                type.hp -= sunflower->GetDamage();
+                target->attacked = true;
+                sun_attacked = true;
+            }
+        }
+        //不在攻击范围内，将attacked改为false
+        else {
+            if (target != NULL)
+                target->attacked = false;
+        }
+    }
+    //更新血条
+    if (sun_attacked) {
+        //如果怪物的血量大于 0 且小于最大血量，更新血条的显示
+        if (type.hp > 0 && type.hp < type.max_hp) {
+            //获取血条的当前尺寸
+            Size hpSize = hp->getContentSize();
+
+            //计算根据当前血量比例需要显示的血条宽度
+            float width;
+            if (monster_type == BOSS)
+                width = 640;
+            else
+                width = 54;
+            width *= static_cast<float>(type.hp) / static_cast<float>(type.max_hp);
+
+            // 更新血条的宽度（即当前血量）
+            hp->setContentSize(Size(width, hpSize.height));
+        }
+    }
 
     findNearestBullet();
     //受到攻击
     if (closestBullet != NULL) {
-        receiveDamage();
+        if (closestBullet->GetType() == SHITBULLET) {
+            type.is_slowing = true;
 
+            //如果是第一次减速（即首次进入减速状态），调用 createSlowAnimation 函数产生减速特效
+            if (type.slowing_time == 0) {
+                type.speed *= 0.8;
+                createSlowAnimation(now_x, now_y);
+            }
+            type.total_slowing_time = closestBullet->GetTime();
+            type.slowing_time += dt;
+        }
+        // 生命值减少
+        type.hp -= closestBullet->GetDamage();
 
         //如果怪物的血量大于 0 且小于最大血量，更新血条的显示
         if (type.hp > 0 && type.hp < type.max_hp) {
@@ -265,10 +343,12 @@ void Monster::update(float dt) {
             Size hpSize = hp->getContentSize();
 
             //计算根据当前血量比例需要显示的血条宽度
-            float width = 54 * static_cast<float>(type.hp) / static_cast<float>(type.max_hp);
-
-            // 设置血条的锚点为左中（保持左边不动）
-            hp->setAnchorPoint(Vec2(0, 0.5));
+            float width;
+            if (monster_type == BOSS)
+                width = 640;
+            else
+                width = 54;
+            width *= static_cast<float>(type.hp) / static_cast<float>(type.max_hp);
 
             // 更新血条的宽度（即当前血量）
             hp->setContentSize(Size(width, hpSize.height));
@@ -321,6 +401,7 @@ void Monster::update(float dt) {
 
         monsters.erase(find_if(monsters.begin(), monsters.end(), [this](const Monster* monster) {return monster == this; }));
         this->removeFromParent();
+        coinNumber += 20; //金币增加
         this->isRemoved = true;
     }
 
@@ -352,11 +433,4 @@ void Monster::createSlowAnimation(float x, float y) {
         slowAnimationSprite->setPosition(this->getPosition()); // 每帧同步特效位置
             }, "syncEffectPosition");
     /**********************************************/
-}
-void Monster::receiveDamage() {
-    if (closestBullet->GetType() == SHITBULLET) {
-        type.is_slowing = true;
-        type.total_slowing_time = closestBullet->GetTime();
-    }
-    type.hp -= closestBullet->GetDamage();
 }
