@@ -38,7 +38,7 @@ bool Monster::init() {
 }
 
 //初始化怪物的类型和路径
-void Monster::initType(int monster_type, int map_type) {
+void Monster::initType(int m, int map_type) {
     monster_type = m;
     path_count = 0;
     isRemoved = false;
