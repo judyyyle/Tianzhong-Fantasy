@@ -145,13 +145,28 @@ public:
     // 移除障碍物及血条
     void removeFromScene() {
         if (barrierSprite) {
-            if (Type == 1) {
+            // 更新 mapGrid 状态
+            if (Type == 0|| Type == 1) {
+                mapGrid[vec2_to_array_BA(Vec2(gridX, gridY)).row][vec2_to_array_BA(Vec2(gridX, gridY)).col] = SPACE;
+            }
+            else if (Type == 2|| Type == 3) {
+                mapGrid[vec2_to_array_BA(Vec2(gridX - 64, gridY)).row][vec2_to_array_BA(Vec2(gridX - 64, gridY)).col] = SPACE;
+                mapGrid[vec2_to_array_BA(Vec2(gridX + 64, gridY)).row][vec2_to_array_BA(Vec2(gridX + 64, gridY)).col] = SPACE;
+            }
+            else if (Type == 4||Type == 5) {
+                mapGrid[vec2_to_array_BA(Vec2(gridX - 64, gridY - 64)).row][vec2_to_array_BA(Vec2(gridX - 64, gridY - 64)).col] = SPACE;
+                mapGrid[vec2_to_array_BA(Vec2(gridX + 64, gridY - 64)).row][vec2_to_array_BA(Vec2(gridX + 64, gridY - 64)).col] = SPACE;
+                mapGrid[vec2_to_array_BA(Vec2(gridX - 64, gridY + 64)).row][vec2_to_array_BA(Vec2(gridX - 64, gridY + 64)).col] = SPACE;
+                mapGrid[vec2_to_array_BA(Vec2(gridX + 64, gridY + 64)).row][vec2_to_array_BA(Vec2(gridX + 64, gridY + 64)).col] = SPACE;
+            }
+
+            if (Type == 0 || Type == 1) {
                 coinNumber += 50;
             }
-            else if (Type == 2) {
+            else if (Type == 2 || Type == 3) {
                 coinNumber += 100;
             }
-            else if (Type == 4) {
+            else if (Type == 4 || Type == 5) {
                 coinNumber += 200;
             }
             barrierSprite->removeFromParent();
