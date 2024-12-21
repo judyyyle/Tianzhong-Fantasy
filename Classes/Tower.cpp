@@ -1,5 +1,4 @@
 #include "Tower.h"
-#include "Bullet.h"
 // 构造函数：初始化防御塔的图片
 
 Tower::Tower(const std::string& fileName) {
@@ -159,14 +158,14 @@ void  BottleTower::update(float dt) {
         return;
     }
     findNearestEnemy();  // 寻找最近的敌人
-    if (currentTarget|| barrierManager->selectedBarrier) {
+    if (currentTarget|| barrierManager->selectedBarrier && barrierManager->selectedBarrier->isDead() == false) {
         rotateTowardsEnemy();  // 面向最近的敌人
     }
 }
 
 // 修改 rotateTowardsEnemy 函数
 void  BottleTower::rotateTowardsEnemy() {
-    if (barrierManager->selectedBarrier) {
+    if (barrierManager->selectedBarrier&& barrierManager->selectedBarrier->isDead() == false) {
         // 获取防御塔的位置
         cocos2d::Vec2 towerPos = this->getPosition();
         float distanceToBarrier = towerPos.distance(barrierManager->selectedBarrier->barrierSprite->getPosition());
@@ -211,8 +210,28 @@ void  BottleTower::rotateTowardsEnemy() {
         return;
     }
 }
+
 void  BottleTower::shoot() {
-    if (barrierManager->selectedBarrier) {
+    // 加载图片
+    auto frame1 = cocos2d::Sprite::create("/GamePlayScene/bottle_level_" + std::to_string(level) + ".png");
+    auto frame2 = cocos2d::Sprite::create("/GamePlayScene/bottle_level_" + std::to_string(level) + "_fire.png");
+    auto frame3 = cocos2d::Sprite::create("/GamePlayScene/bottle_level_" + std::to_string(level) + "_fire2.png");
+    cocos2d::Size frame1Size = frame1->getContentSize();
+    cocos2d::Size frame2Size = frame2->getContentSize();
+    cocos2d::Size frame3Size = frame3->getContentSize();
+    cocos2d::Vector<cocos2d::SpriteFrame*> bottleanimFrames;
+    Animation* bottleanimation;
+    Animate* bottleanimate;
+    bottleanimFrames.reserve(2);
+    bottleanimFrames.pushBack(cocos2d::SpriteFrame::create("/GamePlayScene/bottle_level_" + std::to_string(level) + "_fire.png", cocos2d::Rect(0, 0, frame2Size.width, frame2Size.height)));
+    bottleanimFrames.pushBack(cocos2d::SpriteFrame::create("/GamePlayScene/bottle_level_" + std::to_string(level) + "_fire2.png", cocos2d::Rect(0, 0, frame3Size.width, frame3Size.height)));
+    bottleanimFrames.pushBack(cocos2d::SpriteFrame::create("/GamePlayScene/bottle_level_" + std::to_string(level) + ".png", cocos2d::Rect(0, 0, frame1Size.width, frame1Size.height)));
+
+    bottleanimation = Animation::createWithSpriteFrames(bottleanimFrames, 0.2f);
+    bottleanimate = Animate::create(bottleanimation);
+    auto repeatAction = cocos2d::RepeatForever::create(bottleanimate);
+    if (barrierManager->selectedBarrier && barrierManager->selectedBarrier->isDead() == false) {
+        this->runAction(repeatAction->clone());
         // 获取防御塔的位置
         cocos2d::Vec2 towerPos = this->getPosition();
         float distanceToBarrier = towerPos.distance(barrierManager->selectedBarrier->barrierSprite->getPosition());
@@ -231,6 +250,7 @@ void  BottleTower::shoot() {
 
     }
     if (currentTarget) {
+        this->runAction(repeatAction->clone());
         // 获取敌人的位置
         cocos2d::Vec2 enemyPos = currentTarget->getPosition();
         // 获取塔的位置
@@ -240,6 +260,11 @@ void  BottleTower::shoot() {
         this->getParent()->addChild(bullet, 3); // 将子弹添加到场景中
         bullets.push_back(bullet);
         return;
+    }
+    else
+    {
+        this->stopAllActions();
+        this->setTexture("/GamePlayScene/bottle_level_" + std::to_string(level) + ".png");
     }
 }
 
@@ -347,7 +372,7 @@ void ShitTower::shoot() {
     shitanimation = Animation::createWithSpriteFrames(shitanimFrames, 0.4f);
     shitanimate = Animate::create(shitanimation);
     auto repeatAction = cocos2d::RepeatForever::create(shitanimate);
-    if (barrierManager->selectedBarrier) {
+    if (barrierManager->selectedBarrier && barrierManager->selectedBarrier->isDead() == false) {
         // 获取防御塔的位置
         cocos2d::Vec2 towerPos = this->getPosition();
         float distanceToBarrier = towerPos.distance(barrierManager->selectedBarrier->barrierSprite->getPosition());
@@ -440,7 +465,7 @@ bool SunflowerTower::init() {
         if (isPause) {
             return;
         }
-        if (barrierManager->selectedBarrier)
+        if (barrierManager->selectedBarrier && barrierManager->selectedBarrier->isDead() == false)
         {
             cocos2d::Vec2 towerPos = this->getPosition();
             float distanceToBarrier = towerPos.distance(barrierManager->selectedBarrier->barrierSprite->getPosition());
