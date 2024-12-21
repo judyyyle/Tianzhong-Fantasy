@@ -110,6 +110,9 @@ extern std::vector<Monster*> monsters;
 // MonsterCreate 类，用于创建怪物并管理怪物生成的波次
 class MonsterCreate : public Sprite {
 private:
+    float elapsedTime = 0;  //间隔时间
+    int boss_time = 90;  //倒计时
+    cocos2d::Label* countdownLabel = NULL; // 倒计时显示的标签
     int current = 1;  //当前怪物个数
     int waves[6] = { 0,10,10,15,15,20 }; //每波怪物的总数
     float waveTimer = 1.6f;  // 计时器，用来控制每波怪物的生成间隔
@@ -132,6 +135,8 @@ public:
     //获取map_type数据
     void MonsterWaves(int MAPTYPE) {
         map_type = MAPTYPE;
+        if (map_type == BOSS1)
+            currentWave = 4;
     }
 
     //初始化怪物并将其添加到场景
@@ -157,6 +162,22 @@ public:
         auto monsterSequence = Sequence::create(monsterScaleEffect, monsterFadeEffect, nullptr);
         effect->runAction(monsterSequence);
         /**********************************************/
+        //BOSS关卡倒计时
+        if (map_type == BOSS1) {
+            //创建底图
+            auto countdownBackground = cocos2d::Sprite::create("/Monster/boss_time.png");
+            countdownBackground->setAnchorPoint(Vec2(0.5, 0));
+            countdownBackground->setPosition(1350, 0);
+            this->addChild(countdownBackground);
+            //创建倒计时标签
+            if (countdownLabel)
+                countdownLabel->removeFromParent();
+            countdownLabel = cocos2d::Label::createWithTTF(std::to_string(boss_time), "/fonts/arial.ttf", 48);
+            countdownLabel->setPosition(1310, 45);
+            countdownLabel->setColor(cocos2d::Color3B::WHITE);
+            this->addChild(countdownLabel);
+        }
+        
         //怪物出现
         auto monster = Monster::create();
         if (!monster) {
@@ -180,12 +201,32 @@ public:
         }
         // BOSS模式
         if (map_type == BOSS1) {
-            currentWave = 4;
+            elapsedTime += dt;  // 每帧累积时间
+
+            // 如果倒计时大于 0，则继续倒计时
+            if (boss_time > 0)
+            {
+                if (boss_time != 90 && monsters.empty()) {
+                    currentWave = allWaves + 1;  // 游戏胜利
+                    this->unschedule("update_key");  // 停止定时器
+                }
+                if (elapsedTime >= 1.0f) // 每秒更新一次倒计时
+                {
+                    boss_time--;  // 倒计时减 1
+                    countdownLabel->setString(std::to_string(boss_time)); // 更新文本显示
+                    elapsedTime = 0.0f; // 重置累积时间
+                }
+            }
+            else
+            {
+                carrotHP = 0; // 游戏失败
+                this->unschedule("update_key");  // 停止定时器
+            }
         }
         //更新计时器
         waveTimer += dt;
         //判断是否开始新的一轮
-        if (current > waves[currentWave] && monsters.empty()) {
+        if (map_type != BOSS1 && current > waves[currentWave] && monsters.empty()) {
             currentWave++;
             current = 1;
             waveTimer = -2.1f;
@@ -199,8 +240,14 @@ public:
         float wave_interval[MONSTER_TOTAL] = { 1.4f,1.0f,1.6f };  // 每波生成的时间间隔（1.4秒）
 
         if (current <= 5) {
+            // 第一个直接生成
+            if (current == 1 && (currentWave == 1 || map_type == BOSS1)) {
+                initMonster(NORMAL);
+                current++;
+                waveTimer = 0.0f;
+            }
             // 按照固定间隔生成
-            if (waveTimer >= wave_interval[NORMAL]) {
+            else if (waveTimer >= wave_interval[NORMAL]) {
                 initMonster(NORMAL);
                 current++;
                 waveTimer = 0.0f; //重置计时器
