@@ -1,23 +1,23 @@
 #pragma once
 #include "cocos2d.h"
 #include <vector>
-#include <algorithm>
+
 class Bullet : public cocos2d::Sprite {
 public:
     static Bullet* create(const std::string& fileName, cocos2d::Vec2 startPos, cocos2d::Vec2 targetPos, float speed, int Type, int level);
 
     virtual void update(float dt) override;
 
-    int GetType();  // »ñÈ¡×Óµ¯ÀàĞÍ
-    float GetTime(); // »ñÈ¡¼õËÙÊ±¼ä
-    int GetDamage(); // »ñÈ¡×Óµ¯ÉËº¦
+    int GetType();  // è·å–å­å¼¹ç±»å‹
+    float GetTime(); // è·å–å‡é€Ÿæ—¶é—´
+    int GetDamage(); // è·å–å­å¼¹ä¼¤å®³
 protected:
-    cocos2d::Vec2 startPosition;   // ÆğµãÎ»ÖÃ
-    cocos2d::Vec2 targetPosition;  // Ä¿±êÎ»ÖÃ
-    float speed;                   // ×Óµ¯·ÉĞĞËÙ¶È
-    int damage;                    // ×Óµ¯ÉËº¦
-    float speedcuttime;            // ¹¥»÷ÀàĞÍµÄËÙ¶È¼õÉÙÊ±¼ä
-    int BulletType;                // ×Óµ¯ÀàĞÍ
+    cocos2d::Vec2 startPosition;   // èµ·ç‚¹ä½ç½®
+    cocos2d::Vec2 targetPosition;  // ç›®æ ‡ä½ç½®
+    float speed;                   // å­å¼¹é£è¡Œé€Ÿåº¦
+    int damage;                    // å­å¼¹ä¼¤å®³
+    float speedcuttime;            // æ”»å‡»ç±»å‹çš„é€Ÿåº¦å‡å°‘æ—¶é—´
+    int BulletType;                // å­å¼¹ç±»å‹
 };
 
 
@@ -27,11 +27,11 @@ public:
         Sunflowerfire* ret = new Sunflowerfire();
         if (ret && ret->initWithFile(fileName)) {
             ret->autorelease();
-            ret->damage = 20 * level;   // ×Óµ¯ÉËº¦Ëæ×ÅµÈ¼¶Ôö¼Ó
+            ret->damage = 10 * level;   // å­å¼¹ä¼¤å®³éšç€ç­‰çº§å¢åŠ 
             return ret;
         }
         delete ret;
-        return nullptr;  // Èç¹û³õÊ¼»¯Ê§°Ü£¬·µ»Ø¿ÕÖ¸Õë
+        return nullptr;  // å¦‚æœåˆå§‹åŒ–å¤±è´¥ï¼Œè¿”å›ç©ºæŒ‡é’ˆ
     }
 
 };
