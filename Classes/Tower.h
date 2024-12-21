@@ -2,8 +2,7 @@
 #ifndef __TOWER_H__
 #define __TOWER_H__
 #include"cocos2d.h"
-#include "AppDelegate.h"
-#include "HelloWorldScene.h"
+
 #include "Monster.h"
 #include "GamePlayScene.h"
 #include "BarrierAppear.h"
@@ -11,8 +10,6 @@
 #include <string>
 #include <vector>
 class Monster;
-class Bullet;
-class Sunflowerfire;
 extern std::vector<Monster*> monsters;
 extern std::vector<Bullet*> bullets;
 extern std::vector<Sunflowerfire*>sunflowers;
