@@ -441,7 +441,7 @@ void Monster::createSlowAnimation(float x, float y) {
     /**********************************************/
     // 开始同步特效位置
     if (slowAnimationSprite != nullptr)
-        this->schedule([this, slowAnimationSprite](float) {
+        this->schedule([this](float) {
         slowAnimationSprite->setPosition(this->getPosition()); // 每帧同步特效位置
             }, "syncEffectPosition");
     /**********************************************/
