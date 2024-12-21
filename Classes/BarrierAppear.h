@@ -12,6 +12,8 @@ using namespace cocos2d;
 extern int mapGrid[8][12];
 extern int coinNumber;
 extern std::vector<Bullet*> bulletsTowardBarrier;
+extern std::vector<Sunflowerfire*>sunflowers;
+
 
 #define PATH -1
 #define SPACE 0
@@ -23,14 +25,12 @@ static struct array_BA {
     int row;
     int col;
 };
-
 static Vec2 array_to_vec2_BA(int row, int col) { //返回Vec2类型，即世界坐标
     Vec2 vec;
     vec.x = 64 + 128 * col;
     vec.y = 1024 - 64 - 128 * row;
     return vec;
 }
-
 static array_BA vec2_to_array_BA(Vec2 vec) { //返回array类型，即数组
     array_BA arr;
     arr.row = 8 - static_cast<int>((vec.y / 128)) - 0.5;
@@ -38,6 +38,18 @@ static array_BA vec2_to_array_BA(Vec2 vec) { //返回array类型，即数组
     return arr;
 }
 
+struct barrierSun {
+    Sunflowerfire* sun_fire;
+    bool attacked;
+    barrierSun(Sunflowerfire* f, bool a) :sun_fire(f), attacked(a) {}
+    barrierSun() :sun_fire(NULL), attacked(true) {}
+
+    // 定义 operator==
+    bool operator==(const barrierSun& other) const {
+        // 判断 sun_fire 指针是否指向同一对象，以及 attacked 是否相等
+        return (sun_fire == other.sun_fire) && (attacked == other.attacked);
+    }
+};
 
 
 class BarrierInfo : public Node {
@@ -55,6 +67,7 @@ public:
     int gridY = -1; 
 
     Bullet* closestBullet = nullptr; // 最近的子弹
+    std::vector<barrierSun>fires;
 
     // 初始化障碍物
     bool initWithParams(const std::string& spritePath, const Vec2& position, int initialHp,int type) {
@@ -187,19 +200,54 @@ public:
 
     // 每帧调用的更新方法
     void update(float dt) {
+        bool sun_attacked = false;
+        for (auto sunflower : sunflowers) {
+            cocos2d::Rect fire_rect = sunflower->getBoundingBox();
+            barrierSun* target = nullptr;
+
+            for (auto& fire : fires) {
+                if (fire.sun_fire == sunflower)
+                    target = &fire;
+            }
+
+            if (barrierSprite&&sunflower->getBoundingBox().containsPoint(barrierSprite->getPosition())) {
+                if (target == nullptr) {
+                    barrierSun new_fire(sunflower, true);
+                    fires.push_back(new_fire);
+                    takeDamage(sunflower->GetDamage());
+                    showHpBar();
+                    sun_attacked = true;
+                    break;
+                }
+                else if (target->attacked == false) {
+                    takeDamage(sunflower->GetDamage());
+                    showHpBar();
+                    target->attacked = true;
+                    sun_attacked = true;
+                    break;
+                }
+            }
+            else {
+                if (target != NULL)
+                    target->attacked = false;
+            }
+        }
+        // 如果血量为 0，移除障碍物
+        if (isDead()) {
+            removeFromScene();
+        }
+        
+
         // 更新障碍物逻辑
         findNearestBullet();  // 查找最近的子弹
         if (closestBullet != nullptr) {
             // 如果找到最近的子弹，处理伤害
             takeDamage(closestBullet->GetDamage());
             showHpBar();  // 显示血条
-
             // 如果血量为 0，移除障碍物
             if (isDead()) {
                 removeFromScene();
-                
             }
-
             if (closestBullet) {
                 closestBullet->removeFromParent();  // 从父节点移除子弹
                 // 从 bullets 容器中移除自身
@@ -210,6 +258,7 @@ public:
                 closestBullet = NULL;
             }
         }
+        
     }
 };
 
@@ -220,6 +269,7 @@ public:
 
     Vector<BarrierInfo*> barriers;      // 存储所有障碍物
     BarrierInfo* selectedBarrier;  // 当前选中的障碍物
+    
 
     // 初始化障碍物
     void BarrierAppear(int type, float positionX, float positionY, int initialHp) {
