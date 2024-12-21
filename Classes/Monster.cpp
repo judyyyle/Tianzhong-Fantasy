@@ -412,7 +412,8 @@ void Monster::update(float dt) {
 
         monsters.erase(find_if(monsters.begin(), monsters.end(), [this](const Monster* monster) {return monster == this; }));
         this->removeFromParent();
-        coinNumber += 20; //金币增加
+        if (type.hp <= 0)
+            coinNumber += 20;//金币增加
         this->isRemoved = true;
     }
 
