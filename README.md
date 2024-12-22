@@ -146,7 +146,7 @@
 * ![image](https://github.com/user-attachments/assets/16ae339e-77d3-47b8-a384-1bab30055d3a)
 ## 游戏安装教程
 * 1.请确保安装cocos2dx-v3.7和VisualStudio2022
-* 2.
+* 2.asd
 ## 致谢
 感谢您的来临。
 > 联系我们：  
