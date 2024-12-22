@@ -878,22 +878,7 @@ void MAP_SCENE::updateordeleteTowerPreview(int row, int col)
         upgradeButton->setEnabled(false);  // 禁用按钮，无法点击
     }
     
-    upgradeButton->setPosition(array_to_vec2(row, col) + Vec2(0, 80));  // 按钮位置
-    upgradeButton->setTitleText(std::to_string(upgradeCost));           // 设置显示升级费用
-    upgradeButton->setTitleColor(Color3B::BLACK);
-    upgradeButton->setTitleFontSize(20);
-    auto up_label = upgradeButton->getTitleLabel();
-    up_label->setPosition(Vec2(upgradeButton->getContentSize().width / 2 + 8,
-        upgradeButton->getContentSize().height / 2) + Vec2(0, -25));
-
-    if (tower->getLevel() == 3)
-    {
-        upgradeButton->loadTextures("GamePlayScene/cant_update.PNG", "GamePlayScene/cant_update.PNG", "");  // 显示“已达最大级别”提示
-        upgradeButton->setTitleText("");  // 清空按钮的文字
-        upgradeButton->setEnabled(false);  // 禁用按钮，无法点击
-    }
-
-    this->addChild(upgradeButton, 2);
+    
 
     // 保存当前升级按钮
     currentUpgradeButton = upgradeButton;
