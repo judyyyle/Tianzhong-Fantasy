@@ -157,10 +157,15 @@
 * 6.安装成功，运行游戏！
 ## 致谢
 感谢您的来临。
-![图片1](https://github.com/user-attachments/assets/af252b25-6469-4650-8034-10e1bfa2ea99)
-
 > 任何时间，任何地点，保卫田中小队，随时出击！
 > 联系我们：
+![图片1](https://github.com/user-attachments/assets/af252b25-6469-4650-8034-10e1bfa2ea99)
+
+
+
+
+
+
 * 李雪菲 1298512407@qq.com
 * 朱程榕 3380782523@qq.com
 * 董钰洁 1986282970@qq.com
