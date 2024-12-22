@@ -7,17 +7,17 @@
     - 乐雨晗
         - asd
     - 朱程榕
-        -	设计整体游戏框架，设计关卡系统（关卡选择界面、解锁机制、进度保存） GamePlayScene类
+        -	设计整体游戏框架，设计关卡系统（关卡选择界面、解锁机制、进度保存） （GamePlayScene类）
         -	关卡胜利/失败结算弹窗，管理游戏进度的保存和加载
         -	游戏资源初始化、事件处理 
         -	用户交互（建造塔防，鼠标事件，实现防御塔的攻击目标选择功能）
         -	背景音乐及音效
 
     - 李雪菲
-        - 游戏菜单栏界面、游戏帮助界面制作（GamePlayScene->Gamemenu）
-        - 游戏开始倒计时制作（GamePlayScene->Gamemenu）
-        - 障碍物Barrier模块制作（Barrier）
-        - 萝卜Carrot模块制作 (Monster->Carrot)
+        - 游戏菜单栏界面、游戏帮助界面制作（GamePlayScene->Gamemenu类）
+        - 游戏开始倒计时制作
+        - 障碍物Barrier模块制作（Barrier类）
+        - 萝卜Carrot模块制作 (Monster->Carrot类)
     - 董钰洁 
         - 防御塔模块的开发（Tower类，Bullet类）
         - 防御塔在游戏界面的升级和删除按钮
