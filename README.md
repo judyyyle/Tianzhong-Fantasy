@@ -13,7 +13,7 @@
         - 游戏菜单栏界面、游戏帮助界面制作（GamePlayScene->Gamemenu）
         - 游戏开始倒计时制作（GamePlayScene->Gamemenu）
         - 障碍物Barrier模块制作（Barrier）
-        - 萝卜Carrot模块制作(Monster->Carrot)
+        - 萝卜Carrot模块制作 (Monster->Carrot)
     - 董钰洁 
         - asd
 * 项目Github地址：https://github.com/judyyyle/Tianzhong-Fantasy.git
@@ -145,8 +145,8 @@
 * 游戏结束界面
 * ![image](https://github.com/user-attachments/assets/16ae339e-77d3-47b8-a384-1bab30055d3a)
 ## 游戏安装教程
-* 1. 请确保安装cocos2dx-v3.7和VisualStudio2022
-* 2. 
+* 1.请确保安装cocos2dx-v3.7和VisualStudio2022
+* 2.
 ## 致谢
 感谢您的来临。
 > 联系我们：  
