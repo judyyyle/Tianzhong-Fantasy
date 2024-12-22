@@ -237,18 +237,11 @@ public:
 
     //控制怪物波次生成的函数
     void handleMonsterWaves(float dt) {
-        static int wave = 1;
-        float wave_interval[MONSTER_TOTAL] = { 1.4f,1.0f,1.6f };  // 每波生成的时间间隔（1.4秒）
+        float wave_interval[MONSTER_TOTAL] = { 1.4f,1.6f,1.0f };  // 每波生成的时间间隔（1.4秒）
 
         if (current <= 5) {
-            // 第一个直接生成
-            if (current == 1 && (currentWave == 1 || map_type == BOSS1)) {
-                initMonster(NORMAL);
-                current++;
-                waveTimer = 0.0f;
-            }
             // 按照固定间隔生成
-            else if (waveTimer >= wave_interval[NORMAL]) {
+            if (waveTimer >= wave_interval[NORMAL]) {
                 initMonster(NORMAL);
                 current++;
                 waveTimer = 0.0f; //重置计时器
@@ -292,8 +285,7 @@ public:
                 }
             }
             break;
-        }        
-
+        }
         if (map_type == BOSS1) {
             if (current == 16 && waveTimer >= 1.0f) {
                 current++;
