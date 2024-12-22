@@ -9,7 +9,6 @@ Tower::Tower(const std::string& fileName) {
     attack_power = 10.0f;  // 默认攻击力
     attack_range = 150.0f; // 默认攻击范围
     attack_speed = 1.0f;   // 默认攻击速度
-    nearestEnemy = nullptr;
 }
 
 // 升级防御塔：默认实现为空，具体逻辑由子类重写
