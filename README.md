@@ -129,3 +129,4 @@ Microsoft Visual Studio 2022
            - [x] 规范的命名
            - [x] 避免魔法数字
            - [x] 清晰的注释
+           - [x] 日志输出
