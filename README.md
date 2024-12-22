@@ -15,7 +15,7 @@
         - 障碍物Barrier模块制作（Barrier）
         - 萝卜Carrot模块制作(Monster->Carrot)
     - 董钰洁 
-        - 
+        - asd
 * 项目Github地址：https://github.com/judyyyle/Tianzhong-Fantasy.git
 * 集成开发环境：Microsoft Visual Studio 2022
 ## 项目进度时间线
