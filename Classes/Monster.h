@@ -187,11 +187,12 @@ public:
         //初始化怪物类型和路径
         monster->initType(monster_type, map_type);
 
-        //将怪物添加到 monsters 向量中，管理所有怪物
-        monsters.push_back(monster);
-
         //将怪物添加为当前场景的子节点
         this->getParent()->addChild(monster, 2);
+
+        //将怪物添加到 monsters 向量中，管理所有怪物
+        if (monster)
+            monsters.push_back(monster);
     }
 
     virtual void update(float dt) {
