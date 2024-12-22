@@ -710,7 +710,7 @@ void MAP_SCENE::handleTowerClick(int row, int col)
     }
     else
     {
-        cocos2d::log("该塔不是已知类型");
+        cocos2d::log("unknown");
     }
 }
 
@@ -861,7 +861,7 @@ void MAP_SCENE::updateordeleteTowerPreview(int row, int col)
     Tower* tower = getTowerAt(row, col);
     if (tower == nullptr)
     {
-        cocos2d::log("该位置没有塔，无法显示按钮！");
+        cocos2d::log("unable");
         return;
     }
 
@@ -918,7 +918,7 @@ void MAP_SCENE::updateordeleteTowerPreview(int row, int col)
         {
             currentDeleteButton->removeFromParent();
             currentDeleteButton = nullptr;  // 清空全局变量
-            cocos2d::log("升级后，删除按钮已移除！");
+            cocos2d::log("deleted");
         }
         if (button != nullptr)
         {
@@ -970,7 +970,7 @@ void MAP_SCENE::updateordeleteTowerPreview(int row, int col)
             currentUpgradeButton = nullptr;
         }
 
-        cocos2d::log("塔在位置 (%d, %d) 已被删除！", row, col);
+        cocos2d::log("deleted", row, col);
         });
 
     // 在场景中添加点击事件监听器
@@ -988,7 +988,7 @@ void MAP_SCENE::updateordeleteTowerPreview(int row, int col)
             {
                 currentUpgradeButton->removeFromParent();
                 currentUpgradeButton = nullptr;
-                cocos2d::log("点击在按钮外或按钮禁用，移除升级按钮！");
+                cocos2d::log("deleted upgrade button");
             }
         }
 
@@ -1000,7 +1000,7 @@ void MAP_SCENE::updateordeleteTowerPreview(int row, int col)
             {
                 currentDeleteButton->removeFromParent();
                 currentDeleteButton = nullptr;
-                cocos2d::log("点击在按钮外或按钮禁用，移除删除按钮！");
+                cocos2d::log("deleted");
             }
         }
 
@@ -1021,7 +1021,7 @@ void MAP_SCENE::deleteTower(int row, int col)
 
 if (tower == nullptr)
 {
-    cocos2d::log("该位置没有塔，无法删除！");
+    cocos2d::log("unable");
     return;
 }
 
@@ -1036,7 +1036,7 @@ towerArray[row][col] = nullptr;  // 清除塔的引用
 mapGrid[row][col] = SPACE;
 
 
-cocos2d::log("塔在位置 (%d, %d) 已成功删除！", row, col);
+cocos2d::log("deleted", row, col);
 }
 void MAP_SCENE::upgradeTower(int row, int col)
 {
@@ -1049,18 +1049,18 @@ void MAP_SCENE::upgradeTower(int row, int col)
         tower->upgrade();  // 假设塔类中有升级方法
 
         // 你可以根据需要更新塔的属性，例如增加攻击力，攻击速度，生命值等
-        cocos2d::log("塔在位置 (%d, %d) 升级成功！", row, col);
+        cocos2d::log("succeed", row, col);
     }
     else
     {
-        cocos2d::log("该位置没有塔，无法升级！");
+        cocos2d::log("unable");
     }
 }
 
 Tower* MAP_SCENE::getTowerAt(int row, int col) {
     // 检查是否越界
     if (row < 0 || row >= 8 || col < 0 || col >= 12) {
-        cocos2d::log("无效的位置: (%d, %d)", row, col);
+        cocos2d::log("unvalid", row, col);
         return nullptr;
     }
 
