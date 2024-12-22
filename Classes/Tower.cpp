@@ -10,7 +10,6 @@ Tower::Tower(const std::string& fileName) {
     attack_range = 150.0f; // 默认攻击范围
     attack_speed = 1.0f;   // 默认攻击速度
     nearestEnemy = nullptr;
-    weapon = nullptr;
 }
 
 // 升级防御塔：默认实现为空，具体逻辑由子类重写
@@ -44,7 +43,7 @@ void Tower::update(float dt) {
     // 子类可以重写此方法，实现具体逻辑
 }
 void Tower::findNearestEnemy() {
-    // 如果没有锁定目标或当前目标不在攻击范围内，重新寻找最近的敌人
+
     if (clickedMonster && clickedMonster->isRemoved == false) {
         cocos2d::Vec2 towerPos = this->getPosition();
         float distanceToclickedMonster = towerPos.distance(clickedMonster->getPosition());
@@ -57,7 +56,7 @@ void Tower::findNearestEnemy() {
     float minDistance = attack_range;  // 限制攻击范围
     Monster* closestEnemy = nullptr;
     cocos2d::Vec2 towerPos = this->getPosition();
-
+    // 如果没有锁定目标或当前目标不在攻击范围内，重新寻找最近的敌人
     for (auto enemy : monsters) {
         cocos2d::Vec2 enemyPos = enemy->getPosition();
         float distance = towerPos.distance(enemyPos);
@@ -190,7 +189,7 @@ void  BottleTower::rotateTowardsEnemy() {
         }
         
     }
-    if (currentTarget) {
+    if (currentTarget&&currentTarget->isRemoved ==false) {
         // 获取防御塔的位置
         cocos2d::Vec2 towerPos = this->getPosition();
         // 获取当前目标敌人的位置
@@ -249,7 +248,7 @@ void  BottleTower::shoot() {
         }
 
     }
-    if (currentTarget) {
+    if (currentTarget && currentTarget->isRemoved == false) {
         this->runAction(repeatAction->clone());
         // 获取敌人的位置
         cocos2d::Vec2 enemyPos = currentTarget->getPosition();
@@ -402,7 +401,7 @@ void ShitTower::shoot() {
             
         
     }
-    if (currentTarget) {
+    if (currentTarget && currentTarget->isRemoved == false) {
 
         this->runAction(repeatAction->clone());
         // 获取敌人的位置
@@ -475,7 +474,7 @@ bool SunflowerTower::init() {
             }
 
         }
-        if (currentTarget)
+        if (currentTarget && currentTarget->isRemoved == false)
         {
             startAttack(); // 开始攻击
         }
@@ -546,7 +545,7 @@ void SunflowerTower::startAttack() {
 
 void SunflowerTower::findNearestEnemy() {
     float minDistance = attack_range;  // 限制攻击范围
-    cocos2d::Sprite* closestEnemy = nullptr;
+    Monster* closestEnemy = nullptr;
     cocos2d::Vec2 towerPos = this->getPosition();
 
 
