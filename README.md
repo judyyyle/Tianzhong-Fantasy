@@ -19,7 +19,8 @@
         - 障碍物Barrier模块制作（Barrier）
         - 萝卜Carrot模块制作 (Monster->Carrot)
     - 董钰洁 
-        - asd
+        - 防御塔模块的开发（Tower类，Bullet类）
+        - 防御塔在游戏界面的升级和删除按钮
 * 项目Github地址：https://github.com/judyyyle/Tianzhong-Fantasy.git
 * 集成开发环境：Microsoft Visual Studio 2022
 ## 项目进度时间线
