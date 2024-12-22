@@ -6,16 +6,16 @@
 * 项目成员 ：朱程榕、李雪菲、董钰洁
 * 项目分工 ：
     - 乐雨晗
-        - 
+        - asd
     - 朱程榕
-        - 
+        - asd
     - 李雪菲
         - 游戏菜单栏界面、游戏帮助界面制作（GamePlayScene->Gamemenu）
         - 游戏开始倒计时制作（GamePlayScene->Gamemenu）
         - 障碍物Barrier模块制作（Barrier）
         - 萝卜Carrot模块制作(Monster->Carrot)
     - 董钰洁 
-    - 
+        - 
 * 项目Github地址：https://github.com/judyyyle/Tianzhong-Fantasy.git
 * 集成开发环境：Microsoft Visual Studio 2022
 ## 项目进度时间线
