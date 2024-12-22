@@ -153,6 +153,8 @@ int  BottleTower::getsellPrice() const {
 }
 void  BottleTower::update(float dt) {
     if (isPause) {
+        this->stopAllActions();
+        this->setTexture("/GamePlayScene/bottle_level_" + std::to_string(level) + ".png");
         return;
     }
     findNearestEnemy();  // 寻找最近的敌人
