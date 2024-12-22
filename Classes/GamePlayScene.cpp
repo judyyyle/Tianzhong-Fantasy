@@ -955,7 +955,118 @@ void MAP_SCENE::updateordeleteTowerPreview(int row, int col)
         deleteTower(row, col);
         coinNumber += sellPrice;
         
-       
+ // 移除删除按钮
+        auto button = dynamic_cast<ui::Button*>(sender);
+        if (button != nullptr)
+        {
+            button->removeFromParent();
+            currentDeleteButton = nullptr;  // 清空全局变量
+        }
+
+        // 同时移除升级按钮
+        if (currentUpgradeButton != nullptr)
+        {
+            currentUpgradeButton->removeFromParent();
+            currentUpgradeButton = nullptr;
+        }
+
+        cocos2d::log("塔在位置 (%d, %d) 已被删除！", row, col);
+        });
+
+    // 在场景中添加点击事件监听器
+    auto touchListener = EventListenerTouchOneByOne::create();
+    touchListener->onTouchBegan = [this](Touch* touch, Event* event) {
+        // 转换触摸点到节点空间
+        Vec2 location = this->convertToNodeSpace(touch->getLocation());
+
+        // 如果点击不在按钮范围内，移除所有按钮
+        if (currentUpgradeButton != nullptr)
+        {
+            // 检查升级按钮是否禁用且点击不在按钮范围内
+            if (!currentUpgradeButton->isEnabled() ||
+                !currentUpgradeButton->getBoundingBox().containsPoint(location))
+            {
+                currentUpgradeButton->removeFromParent();
+                currentUpgradeButton = nullptr;
+                cocos2d::log("点击在按钮外或按钮禁用，移除升级按钮！");
+            }
+        }
+
+        if (currentDeleteButton != nullptr)
+        {
+            // 检查删除按钮是否禁用且点击不在按钮范围内
+            if (!currentDeleteButton->isEnabled() ||
+                !currentDeleteButton->getBoundingBox().containsPoint(location))
+            {
+                currentDeleteButton->removeFromParent();
+                currentDeleteButton = nullptr;
+                cocos2d::log("点击在按钮外或按钮禁用，移除删除按钮！");
+            }
+        }
+
+        return false;
+        // 返回 false，不阻止事件继续传递
+        };
+
+    // 将事件监听器注册到场景
+    _eventDispatcher->addEventListenerWithSceneGraphPriority(touchListener, this);
+}
+
+
+
+void MAP_SCENE::deleteTower(int row, int col)
+{
+    // 获取指定位置的塔对象
+    Tower* tower = getTowerAt(row, col);
+
+if (tower == nullptr)
+{
+    cocos2d::log("该位置没有塔，无法删除！");
+    return;
+}
+
+// 从父节点中移除塔的可视化节点（如果有显示的 Sprite 或其他内容）
+if (tower != nullptr)
+{
+    tower->removeFromParent();  // 删除塔的精灵（Sprite）
+}
+
+// 从管理数组或数据结构中移除塔对象引用
+towerArray[row][col] = nullptr;  // 清除塔的引用
+mapGrid[row][col] = SPACE;
+
+
+cocos2d::log("塔在位置 (%d, %d) 已成功删除！", row, col);
+}
+void MAP_SCENE::upgradeTower(int row, int col)
+{
+    // 获取当前的位置的塔实例
+    Tower* tower = getTowerAt(row, col);  // 获取该位置的塔
+
+    if (tower != nullptr)
+    {
+        // 执行升级逻辑，这里假设每个塔类都有`upgrade`函数
+        tower->upgrade();  // 假设塔类中有升级方法
+
+        // 你可以根据需要更新塔的属性，例如增加攻击力，攻击速度，生命值等
+        cocos2d::log("塔在位置 (%d, %d) 升级成功！", row, col);
+    }
+    else
+    {
+        cocos2d::log("该位置没有塔，无法升级！");
+    }
+}
+
+Tower* MAP_SCENE::getTowerAt(int row, int col) {
+    // 检查是否越界
+    if (row < 0 || row >= 8 || col < 0 || col >= 12) {
+        cocos2d::log("无效的位置: (%d, %d)", row, col);
+        return nullptr;
+    }
+
+    // 直接返回数组中的塔对象
+    return towerArray[row][col];
+}       
 
 void  MAP_SCENE::initLevel(int level)// 初始化关卡的方法
 {
