@@ -160,6 +160,7 @@ Microsoft Visual Studio 2022
 * ![image](https://github.com/user-attachments/assets/fbe96d12-708a-4596-822e-c29774d21e20)
 * Boss模式——游戏界面
 * ![image](https://github.com/user-attachments/assets/f655de46-b1db-4511-b73b-39154a75e2d9)
-
-
-
+* 游戏帮助界面
+* ![image](https://github.com/user-attachments/assets/4ef5f53a-d20d-4836-8d8f-6e5b044ed6ef)
+* 游戏结束界面
+* ![image](https://github.com/user-attachments/assets/16ae339e-77d3-47b8-a384-1bab30055d3a)
