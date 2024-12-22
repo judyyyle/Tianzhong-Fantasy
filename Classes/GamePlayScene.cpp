@@ -911,7 +911,35 @@ void MAP_SCENE::updateordeleteTowerPreview(int row, int col)
 
         coinNumber -= upgradeCost;
 
-      
+        // 升级后移除按钮
+        auto button = dynamic_cast<ui::Button*>(sender);
+        // 升级后移除删除按钮
+        if (currentDeleteButton != nullptr)
+        {
+            currentDeleteButton->removeFromParent();
+            currentDeleteButton = nullptr;  // 清空全局变量
+            cocos2d::log("升级后，删除按钮已移除！");
+        }
+        if (button != nullptr)
+        {
+            button->removeFromParent();
+            currentUpgradeButton = nullptr;  // 清空全局变量
+        }
+        });
+
+    // 创建删除按钮
+    auto deleteButton = ui::Button::create("GamePlayScene/SellTower.png");  // 替换为删除按钮的图片
+    deleteButton->setPosition(array_to_vec2(row, col) + Vec2(0, -80));  // 按钮位置，塔下方
+    deleteButton->setTitleText(std::to_string(sellPrice));           // 设置显示升级费用
+    deleteButton->setTitleColor(Color3B::BLACK);
+    deleteButton->setTitleFontSize(20);
+    auto sell_label = deleteButton->getTitleLabel();
+    sell_label->setPosition(Vec2(deleteButton->getContentSize().width / 2 + 8,
+        deleteButton->getContentSize().height / 2) + Vec2(0, -25));
+    this->addChild(deleteButton, 2);
+
+    // 保存当前删除按钮
+    currentDeleteButton = deleteButton;
 
     // 删除按钮点击事件：删除塔
     deleteButton->addClickEventListener([this, tower, row, col, sellPrice](Ref* sender) mutable {
