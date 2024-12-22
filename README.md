@@ -1,4 +1,13 @@
 # 保卫田中
+
+
+
+![image](https://github.com/user-attachments/assets/b364cfc2-cfc1-49a1-b9da-519c264ccbf6)
+
+
+
+
+
 ### 同济大学 2023级 软件工程 程序设计范式 期末大作业
 ## 项目信息
 * 项目选题 ：保卫萝卜
