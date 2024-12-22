@@ -81,6 +81,7 @@
            - [x] ⽀持3种防御塔和防御塔的删除
            - [x] 支持每种防御塔的攻击特效，完成发射物弹道
            - [x] 支持怪物、障碍物、萝⼘⽣命值显示
+           - [x] ⽀持萝卜受到攻击时萝卜形象、血量的变化
            - [x] ⽀持金币资源功能，金币资源可⽤于购买防御塔，金币资源可通过击杀怪物获得
            - [x] ⽀持每种防御塔的升级，可升级2次
            - [x] ⽀持3种冒险模式怪物，1种Boss模式怪物
@@ -93,7 +94,6 @@
            - [x] 支持游戏进行中点击菜单界面选择继续游戏、重新开始、选择关卡功能
            - [x] ⽀持防御塔攻击时塔身的动画特效
            - [x] ⽀持怪物受到Shit Tower攻击时形象的变化
-           - [x] ⽀持萝卜受到攻击时萝卜形象、血量的变化
            - [x] 支持冒险模式的暂停游戏功能
            - [x] 支持Boss模式游戏结束的倒计时功能
            - [x] 支持Boss模式Boss怪物血量条显示功能
@@ -149,11 +149,16 @@
 * 游戏结束界面
 * ![image](https://github.com/user-attachments/assets/16ae339e-77d3-47b8-a384-1bab30055d3a)
 ## 游戏安装教程
-* 1.请确保安装cocos2dx-v3.7和VisualStudio2022
-* 2.asd
+* 1.请确保安装cocos2dx-v3.7和VisualStudio2022。
+* 2.在Guihub网站中下载Classes与Resources文件夹中所有文件。
+* 3.在cmd中输入“cocos new Tianzhong-Fantasy -p com.Tianzhong-Fantasy.game -l cpp -d .”，创建cocos2d项目。（注意：文件路径全部为英文）
+* 4.在创建的cocos2d项目中，替换对应的Classes与Resources文件夹。
+* 5.打开win.32中的sin，移除src中原有的HelloWorldScene.cpp、HelloWorldScene.h、AppDelegate.cpp和AppDelegate.h。然后添加现有项，将Classes中所有文件添加。
+* 6.安装成功，运行游戏！
 ## 致谢
 感谢您的来临。
 > 联系我们：  
 * 李雪菲 1298512407@qq.com
 * 朱程榕 3380782523@qq.com
 * 董钰洁 1986282970@qq.com
+* 乐雨晗 2111399471@qq.com
