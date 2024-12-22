@@ -4,15 +4,18 @@
 * 项目选题 ：保卫萝⼘
 * 项目成员 ：乐雨晗
 * 项目成员 ：朱程榕、李雪菲、董钰洁
-    -    项目分工
-           - [x] 乐雨晗
-
-           - [x] 朱程榕
-
-           - [x] 李雪菲
-
-           - [x] 董钰洁 
-
+* 项目分工
+    - 乐雨晗
+        - 
+    - 朱程榕
+        - 
+    - 李雪菲
+        - 游戏菜单栏界面、游戏帮助界面制作（GamePlayScene->Gamemenu）
+        - 游戏开始倒计时制作（GamePlayScene->Gamemenu）
+        - 障碍物Barrier模块制作（Barrier）
+        - 萝卜Carrot模块制作(Monster->Carrot)
+    - 董钰洁 
+    - 
 * 项目Github地址：https://github.com/judyyyle/Tianzhong-Fantasy.git
 * 集成开发环境：Microsoft Visual Studio 2022
 ## 项目进度时间线
@@ -141,3 +144,10 @@
 * ![image](https://github.com/user-attachments/assets/4ef5f53a-d20d-4836-8d8f-6e5b044ed6ef)
 * 游戏结束界面
 * ![image](https://github.com/user-attachments/assets/16ae339e-77d3-47b8-a384-1bab30055d3a)
+## 游戏使用方法
+* 1. 请确保安装cocos2dx-v3.7和VisualStudio2022
+* 2. 
+## 致谢
+感谢您的来临。
+> 联系我们：  
+> 李雪菲 1298512407@qq.com
