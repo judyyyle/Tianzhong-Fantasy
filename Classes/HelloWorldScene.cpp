@@ -1,12 +1,13 @@
 #include "HelloWorldScene.h"
 #include "SimpleAudioEngine.h"
 #include "LevelSelectionScene.h" 
+#include "GameManager.h"
 #include "ui/CocosGUI.h"
 #include "cocos2d.h"
 USING_NS_CC;
-
+#include "audio/include/AudioEngine.h"
 using namespace cocos2d::ui;
-
+using namespace cocos2d::experimental;
 Scene* HelloWorld::createScene()
 {
     return HelloWorld::create();
@@ -60,28 +61,13 @@ bool HelloWorld::init()
     menu->setPosition(Vec2::ZERO);
     this->addChild(menu, 1);
 
+
+    // 停止所有音频
+    AudioEngine::stopAll();
+    // 播放背景音乐（循环播放）
+    AudioEngine::play2d("sound/CarrotFantasy.mp3", true);  // 第一个参数是文件路径，第二个参数是是否循环播放
     /////////////////////////////
-    // 3. add your codes below...
-
-    // add a label shows "Hello World"
-    // create and initialize a label
-
-  /*  auto label = Label::createWithTTF("Hello World", "fonts/Marker Felt.ttf", 24);
-    if (label == nullptr)
-    {
-        problemLoading("'fonts/Marker Felt.ttf'");
-    }
-    else
-    {
-        // position the label on the center of the screen
-        label->setPosition(Vec2(origin.x + visibleSize.width/2,
-                                origin.y + visibleSize.height - label->getContentSize().height));
-
-        // add the label as a child to this layer
-        this->addChild(label, 1);
-    }*/
-
-    // add "HelloWorld" splash screen"
+   
     auto sprite = Sprite::create("MainMenuScene/menu.png");
     if (sprite == nullptr)
     {
@@ -96,7 +82,8 @@ bool HelloWorld::init()
         this->addChild(sprite, 0);//背景层级为0，确保它在最底层
     }
 
-   
+    GameManager::getInstance(); // 确保 GameManager 的单例被创建
+  
     auto AdeventureModebutton = ui::Button::create("MainMenuScene/AdeventureMode.png", "MainMenuScene/AdventureModeAfterpress.png");
     AdeventureModebutton->setPosition(Vec2(384, visibleSize.height / 2 + origin.y - 300));
     AdeventureModebutton->setScale(2);
@@ -113,15 +100,16 @@ bool HelloWorld::init()
     BossModebutton->setScale(2);
     BossModebutton->addClickEventListener([=](Ref* sender) {
         CCLOG("Button clicked!");
+        MAP_SCENE* newMapScene = MAP_SCENE::create();
+        level = 2;
+        // 初始化指定等级
+        newMapScene->initLevel(level);
+        // 切换到新的场景
+        Director::getInstance()->replaceScene(newMapScene);
         });
     this->addChild(BossModebutton, 1);
-
-
-
-
     return true;
 }
-
 
 void HelloWorld::menuCloseCallback(Ref* pSender)
 {
