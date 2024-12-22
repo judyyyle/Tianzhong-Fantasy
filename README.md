@@ -129,7 +129,9 @@
 * Boss模式——游戏界面
 * ![image](https://github.com/user-attachments/assets/f655de46-b1db-4511-b73b-39154a75e2d9)
 * 游戏菜单栏界面
+* 冒险模式
 * ![image](https://github.com/user-attachments/assets/dedd5845-4375-445d-8c69-4a9dc96e72db)
+* Boss模式
 * ![image](https://github.com/user-attachments/assets/2752b605-3971-4111-84e3-0675f42d40ed)
 * 游戏暂停界面
 * ![image](https://github.com/user-attachments/assets/6b1cb02c-cee5-402f-a5a9-f5ed260139f2)
