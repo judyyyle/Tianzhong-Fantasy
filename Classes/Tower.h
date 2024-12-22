@@ -34,7 +34,6 @@ protected:
     float attack_power; // 单次攻击力
     float attack_range; // 攻击范围
     float attack_speed; // 攻击速度
-    cocos2d::Sprite* nearestEnemy; // 最近的敌人
     cocos2d::Vec2 fireTarget; // 目标坐标
     std::string ImageBase; // 图片路径
     Monster* currentTarget = nullptr;  // 当前目标敌人
