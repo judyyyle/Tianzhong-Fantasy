@@ -56,13 +56,10 @@ static array vec2_to_array(Vec2 vec) { //返回array类型，即数组
 }
 
 void clearAllVectors() {
-    /*
-    for (auto monster : monsters) {
-        delete monster;
-    }
-    */
-
     monsters.clear();
+    bullets.clear();
+    bulletsTowardBarrier.clear();
+    sunflowers.clear();
 }
 
 /*********************  GameMenu  ************************/
