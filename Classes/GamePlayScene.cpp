@@ -843,7 +843,34 @@ void MAP_SCENE::clearWarningSprites()
 ui::Button* currentUpgradeButton = nullptr;  // 全局变量，用于记录当前的升级按钮
 ui::Button* currentDeleteButton = nullptr;  // 全局变量，用于记录当前的删除按钮
 
+void MAP_SCENE::updateordeleteTowerPreview(int row, int col)
+{
+    // 如果有其他按钮，先移除它们
+    if (currentUpgradeButton != nullptr)
+    {
+        currentUpgradeButton->removeFromParent();
+        currentUpgradeButton = nullptr;
+    }
+    if (currentDeleteButton != nullptr)
+    {
+        currentDeleteButton->removeFromParent();
+        currentDeleteButton = nullptr;
+    }
 
+    // 获取当前格子上的塔
+    Tower* tower = getTowerAt(row, col);
+    if (tower == nullptr)
+    {
+        cocos2d::log("该位置没有塔，无法显示按钮！");
+        return;
+    }
+
+    // 获取塔的升级费用
+    const int upgradeCost = tower->getUpgradeCost();
+    const int sellPrice = tower->getsellPrice();
+
+    // 创建升级按钮
+    auto upgradeButton = ui::Button::create("GamePlayScene/CanUpLevel.png");
 
     if (coinNumber < tower->getUpgradeCost())
     {
