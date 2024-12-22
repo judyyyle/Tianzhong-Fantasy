@@ -2,71 +2,71 @@
 #include "HelloWorldScene.h"
 #include "SimpleAudioEngine.h"
 #include "LevelSelectionScene.h"
-#include "cocos2d.h"  // ÒÑ¾­°üº¬ÁË ui/CocosGUI.h ËùÒÔ²»ĞèÒªÔÙ°üº¬
+#include "cocos2d.h"  // å·²ç»åŒ…å«äº† ui/CocosGUI.h æ‰€ä»¥ä¸éœ€è¦å†åŒ…å«
 
-using namespace cocos2d;  // ½öÊ¹ÓÃ cocos2d ÃüÃû¿Õ¼ä
+using namespace cocos2d;  // ä»…ä½¿ç”¨ cocos2d å‘½åç©ºé—´
 
 
 GameManager::GameManager() {
-    // ³õÊ¼»¯³ÉÔ±±äÁ¿
+    // åˆå§‹åŒ–æˆå‘˜å˜é‡
     allWaves = 0;
-    currentWaves = 0;
-    carrotHP = 10;  // Ä¬ÈÏÑªÁ¿
+    currentWave = 0;
+    carrotHP = 10;  // é»˜è®¤è¡€é‡
     coinNumber = 100;
     level = 1;
     towerCount = 0;
-    currentState = ONGOING; // Ä¬ÈÏ×´Ì¬Îª½øĞĞÖĞ
+    currentState = ONGOING; // é»˜è®¤çŠ¶æ€ä¸ºè¿›è¡Œä¸­
 }
 
-// ¾²Ì¬³ÉÔ±±äÁ¿³õÊ¼»¯
+// é™æ€æˆå‘˜å˜é‡åˆå§‹åŒ–
 
 GameManager* GameManager::instance = nullptr;
 
-// »ñÈ¡µ¥ÀıÊµÀı
+// è·å–å•ä¾‹å®ä¾‹
 GameManager* GameManager::getInstance() {
     if (!instance) {
-        instance = new GameManager();
     }
+        instance = new GameManager();
     return instance;
 }
 
-// ÉèÖÃÓÎÏ·×´Ì¬
+// è®¾ç½®æ¸¸æˆçŠ¶æ€
 void GameManager::setGameState(GameState state) {
     currentState = state;
-    // Äã¿ÉÒÔ¸ù¾İ×´Ì¬×öÒ»Ğ©¶îÍâµÄ²Ù×÷£¬±ÈÈç¼ÇÂ¼ÈÕÖ¾µÈ
+    // ä½ å¯ä»¥æ ¹æ®çŠ¶æ€åšä¸€äº›é¢å¤–çš„æ“ä½œï¼Œæ¯”å¦‚è®°å½•æ—¥å¿—ç­‰
     CCLOG("Game state changed: %d", currentState);
 }
 
-// »ñÈ¡µ±Ç°ÓÎÏ·×´Ì¬
+/*
+// è·å–å½“å‰æ¸¸æˆçŠ¶æ€
 GameState GameManager::getGameState() const {
     return currentState;
 }
 
-//±£´æÓÎÏ·×´Ì¬
+//ä¿å­˜æ¸¸æˆçŠ¶æ€
 void GameManager::saveGameState() {
     UserDefault::getInstance()->setIntegerForKey("all_waves", allWaves);
-    UserDefault::getInstance()->setIntegerForKey("current_waves", currentWaves);
+    UserDefault::getInstance()->setIntegerForKey("current_waves", currentWave);
     UserDefault::getInstance()->setIntegerForKey("carrot_hp", carrotHP);
     UserDefault::getInstance()->setIntegerForKey("coin_number", coinNumber);
     UserDefault::getInstance()->setIntegerForKey("current_level", level);
     UserDefault::getInstance()->setIntegerForKey("tower_count", towerCount);
-
-    UserDefault::getInstance()->flush(); // È·±£Á¢¼´Ğ´Èë´ÅÅÌ
+    UserDefault::getInstance()->flush(); // ç¡®ä¿ç«‹å³å†™å…¥ç£ç›˜
     CCLOG("Game state saved!");
 }
 
-//¼ÓÔØÓÎÏ·×´Ì¬
+//åŠ è½½æ¸¸æˆçŠ¶æ€
 void GameManager::loadGameState() {
     allWaves = UserDefault::getInstance()->getIntegerForKey("all_waves", 0);
-    currentWaves = UserDefault::getInstance()->getIntegerForKey("current_waves", 0);
-    carrotHP = UserDefault::getInstance()->getIntegerForKey("carrot_hp", 10); // Ä¬ÈÏÂÜ²·ÑªÁ¿Îª 10
+    currentWave = UserDefault::getInstance()->getIntegerForKey("current_waves", 0);
+    carrotHP = UserDefault::getInstance()->getIntegerForKey("carrot_hp", 10); // é»˜è®¤èåœè¡€é‡ä¸º 10
     coinNumber = UserDefault::getInstance()->getIntegerForKey("coin_number", 100);
-    level = UserDefault::getInstance()->getIntegerForKey("current_level", 1); // Ä¬ÈÏ¹Ø¿¨Îª 1
+    level = UserDefault::getInstance()->getIntegerForKey("current_level", 1); // é»˜è®¤å…³å¡ä¸º 1
     towerCount = UserDefault::getInstance()->getIntegerForKey("tower_count", 0);
 
-    CCLOG("Game state loaded: allWaves=%d, currentWaves=%d, carrotHP=%d, coinNumber=%d, level=%d, towerCount=%d",
-        allWaves, currentWaves, carrotHP, coinNumber, level, towerCount);
-}
+    CCLOG("Game state loaded: allWaves=%d, currentWave=%d, carrotHP=%d, coinNumber=%d, level=%d, towerCount=%d",
+        allWaves, currentWave, carrotHP, coinNumber, level, towerCount);
+}*/
 
 void GameManager::addMonster(Monster* monster) {
     activeMonsters.push_back(monster);
@@ -79,9 +79,19 @@ const std::vector<Monster*>& GameManager::getActiveMonsters() const {
     return activeMonsters;
 }
 
-// ÖĞÖ¹ÓÎÏ·²¢±£´æµ±Ç°ÓÎÏ·×´Ì¬
+// ä¸­æ­¢æ¸¸æˆå¹¶ä¿å­˜å½“å‰æ¸¸æˆçŠ¶æ€
 void GameManager::endGame() {
-    saveGameState();  // ±£´æµ±Ç°µÄÓÎÏ·×´Ì¬
-    setGameState(GameState::LOSE);  // ÉèÖÃÓÎÏ·×´Ì¬ÎªÊ§°Ü£¬¿ÉÒÔ¸ù¾İĞèÒª¸ÄÎª WIN »òÆäËû×´Ì¬
+    //saveGameState();  // ä¿å­˜å½“å‰çš„æ¸¸æˆçŠ¶æ€
+    setGameState(GameState::LOSE);  // è®¾ç½®æ¸¸æˆçŠ¶æ€ä¸ºå¤±è´¥ï¼Œå¯ä»¥æ ¹æ®éœ€è¦æ”¹ä¸º WIN æˆ–å…¶ä»–çŠ¶æ€
     CCLOG("Game has ended. Current game state saved.");
 }
+
+void GameManager::showResultPopup() {
+    if (currentState == LOSE) {
+       //showLosePopup();
+    }
+    else if (currentState == WIN) {
+        //showWinPopup();
+    }
+}
+
