@@ -144,7 +144,7 @@
 * ![image](https://github.com/user-attachments/assets/4ef5f53a-d20d-4836-8d8f-6e5b044ed6ef)
 * 游戏结束界面
 * ![image](https://github.com/user-attachments/assets/16ae339e-77d3-47b8-a384-1bab30055d3a)
-## 游戏使用方法
+## 游戏安装教程
 * 1. 请确保安装cocos2dx-v3.7和VisualStudio2022
 * 2. 
 ## 致谢
