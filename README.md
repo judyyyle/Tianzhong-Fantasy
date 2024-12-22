@@ -150,3 +150,16 @@ Microsoft Visual Studio 2022
 * 5.关卡目标**
    - 每关的目标是保护萝卜不被消灭，同时尽可能全灭敌人。  
    - 冒险模式下，需完成前置关卡，才能解锁下一关卡。  
+
+### 游戏界面
+* 主界面
+* ![image](https://github.com/user-attachments/assets/10639aee-6729-4329-a264-5582bc10aa73)
+* 冒险模式——选择关卡
+* ![image](https://github.com/user-attachments/assets/07e729a3-cfbd-4b73-b309-a0acc1292dac)
+* 冒险模式——游戏界面
+* ![image](https://github.com/user-attachments/assets/fbe96d12-708a-4596-822e-c29774d21e20)
+* Boss模式——游戏界面
+* ![image](https://github.com/user-attachments/assets/f655de46-b1db-4511-b73b-39154a75e2d9)
+
+
+
