@@ -9,27 +9,31 @@
 #include "cocos2d.h"
 #include "Tower.h"
 #include "BarrierAppear.h"
-
+#include "SimpleAudioEngine.h"
 USING_NS_CC;
 
 using namespace cocos2d::ui;
 // 在 MAP_SCENE 类中，添加一个成员变量来保存提示图标
 int mapGrid[8][12] = { 0 };
-int level ;
+int level;
 /**********************  全局变量  ***********************/
 //关卡选项
-
+bool isLevel2Unlocked = 0;//第二关是否解锁
 int isPause;//是否暂停
+int isEND = false;
 //游戏内数据
-int allWaves = 20;//总的波数
-int currentWave = 14;//当前怪物的波数
+int allWaves = 0;//总的波数
+int currentWave = 1;//当前怪物的波数
 int carrotHP = 10;//记录萝卜的血量
-int coinNumber = 1234;//记录当前金币的数量
+int coinNumber = 0;//记录当前金币的数量
 Carrot* globalCarrot = nullptr;//萝卜
- std::vector<Monster*> monsters;
+std::vector<Monster*> monsters;
 BarrierManager* barrierManager = nullptr;  // 管理障碍物 
-Monster* clickedMonster=NULL;//选中的优先攻击怪兽
+Monster* clickedMonster = NULL;//选中的优先攻击怪兽
 Monster* previousSelectedMonster = NULL;
+std::vector<Bullet*>bullets;
+std::vector<Bullet*>bulletsTowardBarrier;
+std::vector<Sunflowerfire*>sunflowers;
 
 //世界坐标与数组的转换
 static struct array {
@@ -57,9 +61,10 @@ void clearAllVectors() {
         delete monster;
     }
     */
-    
+
     monsters.clear();
 }
+
 /*********************  GameMenu  ************************/
 Layer* GameMenu::createLayer() {
     auto layer = GameMenu::create();
@@ -71,6 +76,7 @@ Layer* GameMenu::createLayer() {
 }
 //倒计时特效
 void GameMenu::start() {
+    TouchManager::getInstance().disableTouch();
     auto visibleSize = Director::getInstance()->getVisibleSize();
     Vec2 origin = Director::getInstance()->getVisibleOrigin();
 
@@ -141,7 +147,9 @@ void GameMenu::start() {
         nullptr
     );
     readyGo->runAction(sequence);
+    TouchManager::getInstance().enableTouch();
 }
+
 //初始化
 bool GameMenu::init()
 {
@@ -171,14 +179,13 @@ bool GameMenu::init()
     coin_number->setName("CoinNumber");
     coin_number->setPosition(282, 980);
     this->addChild(coin_number);
- 
+
     // 定时更新金币数值
-    this->schedule([coin_number](float dt) {
-        // 更新金币数值
+    this->schedule([=](float dt) {
+        // 通过直接更新 coin_number 来显示最新的 coinNumber
         coin_number->setString(std::to_string(coinNumber));
         }, 0.1f, "update_coin_key");
-    coin_number->setString(std::to_string(coinNumber));// 更新金币数值显示
- 
+
     //波数显示
     auto waves_image = Sprite::create("/GamePlayScene/wave_number.png");
     waves_image->setPosition(Vec2(origin.x + visibleSize.width * 0.4,
@@ -193,7 +200,7 @@ bool GameMenu::init()
     auto waves_txt = Label::createWithTTF("/ " + std::to_string(allWaves) + " Waves", "/fonts/TMON Monsori.ttf", 40);
     waves_txt->setPosition(Vec2(origin.x + visibleSize.width * 0.525,
         origin.y + visibleSize.height * 0.94 + 16));
-    this->addChild(waves_txt)；
+    this->addChild(waves_txt);
     if (level == 2) {
         waves_image->setVisible(false);
         waves_label->setVisible(false);
@@ -202,12 +209,13 @@ bool GameMenu::init()
         hp->setPosition(704, 980);
         this->addChild(hp, 3);
     }
+
     // 定时更新波数显示
     this->schedule([waves_label](float dt) {
         // 更新波数显示
         waves_label->setString(std::to_string(currentWave / 10 % 10) + "    " + std::to_string(currentWave % 10));
         }, 0.1f, "update_wave_key");
- 
+
     //暂停开关：初始isPause=0，如勾选则暂停
     auto paused = Sprite::create("/GamePlayScene/paused.png");
     paused->setScale(1.4);
@@ -237,8 +245,9 @@ bool GameMenu::init()
         }, pause_off, pause_on, nullptr);
     pause_toggle->setPosition(Vec2(Vec2(origin.x + visibleSize.width * 0.7,
         origin.y + visibleSize.height * 0.955)));
-    menu->addChild(pause_toggle);   
-   start();
+    menu->addChild(pause_toggle);
+    start();
+
     //选项
     auto options_btn = Button::create("/GamePlayScene/touming-hd.pvr_28.PNG", "/GamePlayScene/touming-hd.pvr_26.PNG");
     options_btn->setPosition(Vec2(origin.x + visibleSize.width * 0.8,
@@ -252,8 +261,8 @@ bool GameMenu::init()
         case Button::TouchEventType::CANCELED:
             break;
         case Button::TouchEventType::ENDED:
-          options();
-           
+            options();
+
             break;
         }
         });
@@ -265,7 +274,7 @@ void GameMenu::options() {
     // 获取屏幕大小
     auto visibleSize = Director::getInstance()->getVisibleSize();
     Vec2 origin = Director::getInstance()->getVisibleOrigin();
-    
+
     /************************  纯色层  *****************************/
     isPause = 1;  // 游戏暂停
     auto blackLayer = LayerColor::create(Color4B::BLACK);
@@ -278,14 +287,14 @@ void GameMenu::options() {
     listener->setSwallowTouches(true);  // 确保触摸事件不传递给下层
     listener->onTouchBegan = [blackLayer](Touch* touch, Event* event) {
         // 确保返回true来阻止下层的触摸事件
-        return true; 
-    };
+        return true;
+        };
     Director::getInstance()->getEventDispatcher()->addEventListenerWithSceneGraphPriority(listener, blackLayer);
 
     /******************  背景  ***************************/
     auto optionsBackground = Sprite::create("/GamePlayScene/options_bg.png");
     optionsBackground->setPosition(Vec2(origin.x + visibleSize.width / 2, origin.y + visibleSize.height / 2));
-    
+
     blackLayer->getParent()->getParent()->addChild(optionsBackground, 3);  // 添加到第三层
 
     /*******************  菜单  ***************************/
@@ -309,44 +318,46 @@ void GameMenu::options() {
 
         // 移除背景
         optionsBackground->removeFromParent();
-        isPause = 1;
-    });
+        isPause = 0;
+        });
     optionsMenu->addChild(continueGame, 3);
-   
-    // 重新开始按钮
+
     auto restartGame = MenuItemImage::create("/GamePlayScene/restart_normal.png", "/GamePlayScene/restart_selected.png");
     restartGame->setPosition(Vec2(visibleSize.width * 0.492, visibleSize.height * 0.513));
     restartGame->setCallback([this, blackLayer](Ref* psender) {
         this->removeChildByName("PlayingLevel");
-      
-        // 重新开始游戏时恢复初始状态
-        //重置游戏状态
 
+        //重新开始游戏时恢复初始状态
+        //重置游戏状态
+        clearAllVectors();
         // 重新加载游戏场景
         auto newMapScene = MAP_SCENE::create();
         newMapScene->initLevel(level);  // 初始化关卡
         Director::getInstance()->replaceScene(newMapScene);  // 切换到新的场景
-
         isPause = 0;
-    });
+        });
     optionsMenu->addChild(restartGame, 3);
 
     // 选择关卡按钮
     auto returnSelect = MenuItemImage::create("/GamePlayScene/return_normal.png", "/GamePlayScene/return_selected.png");
     returnSelect->setPosition(Vec2(visibleSize.width * 0.492, visibleSize.height * 0.42));
     returnSelect->setCallback([this, blackLayer](Ref* psender) {
-           isPause = 0;
-  clearAllVectors();
+        isPause = 0;
+        clearAllVectors();
         // 跳转到 HelloWorld 场景
         auto helloWorldScene = HelloWorld::createScene();  // 创建 HelloWorld 场景
         Director::getInstance()->replaceScene(helloWorldScene);  // 替换当前场景
-    });
+        });
     optionsMenu->addChild(returnSelect, 3);
 }
-//失败结算画面
-void GameMenu::showLosePopup() {
+
+
+
+
+void GameMenu::showLosePopup() {//失败结算画面
     CCLOG("showLosePopup called");
-    isPause =true; // 停止游戏逻辑
+    isPause = true; // 停止游戏逻辑
+    clearAllVectors();
     /*******************************  数据更新  *****************************/
    // UserDefault::getInstance()->setIntegerForKey("money_statistics", UserDefault::getInstance()->getIntegerForKey("money_statistics") + coinNumber);
     //UserDefault::getInstance()->setIntegerForKey("monster_statistics", UserDefault::getInstance()->getIntegerForKey("monster_statistics") + activeMonsters.size());
@@ -360,7 +371,7 @@ void GameMenu::showLosePopup() {
     auto black_layer = LayerColor::create(Color4B::BLACK);
     black_layer->setPosition(Vec2::ZERO);
     black_layer->setOpacity(90);
- 
+
     auto runningScene = Director::getInstance()->getRunningScene();
     if (runningScene) {
         runningScene->addChild(black_layer, 2);
@@ -382,54 +393,66 @@ void GameMenu::showLosePopup() {
     auto lose_bg = Sprite::create("/GamePlayScene/lose.png");
     lose_bg->setPosition(Vec2(origin.x + visibleSize.width / 2, origin.y + visibleSize.height / 2));
     lose_bg->setScale(1.7);
-    black_layer->addChild(lose_bg,2);
+    black_layer->addChild(lose_bg, 2);
 
     // 当前波数显示
     auto waves_label = Label::createWithTTF(std::to_string(currentWave / 10 % 10) + "   " + std::to_string(currentWave % 10), "/fonts/Marker Felt.ttf", 32);
     waves_label->setColor(Color3B::YELLOW);
-    waves_label->setPosition(Vec2(origin.x + visibleSize.width * 0.475+19, origin.y + visibleSize.height * 0.52));
-    black_layer->addChild(waves_label,2);
+    waves_label->setPosition(Vec2(origin.x + visibleSize.width * 0.475 + 19, origin.y + visibleSize.height * 0.52));
+    black_layer->addChild(waves_label, 2);
 
     // 波数显示
     auto waves_txt = Label::createWithTTF(std::to_string(allWaves), "/fonts/Marker Felt.ttf", 32);
-    waves_txt->setPosition(Vec2(origin.x + visibleSize.width * 0.58-50, origin.y + visibleSize.height * 0.52));
-    black_layer->addChild(waves_txt,2);
+    waves_txt->setPosition(Vec2(origin.x + visibleSize.width * 0.58 - 50, origin.y + visibleSize.height * 0.52));
+    black_layer->addChild(waves_txt, 2);
 
     // 关卡显示
     auto level_txt = Label::createWithTTF("0" + std::to_string(level), "/fonts/Marker Felt.ttf", 32);
-    level_txt->setPosition(Vec2(origin.x + visibleSize.width * 0.4+50, origin.y + visibleSize.height * 0.43+20));
-    black_layer->addChild(level_txt,2);
+    level_txt->setPosition(Vec2(origin.x + visibleSize.width * 0.4 + 50, origin.y + visibleSize.height * 0.43 + 20));
+    black_layer->addChild(level_txt, 2);
 
     /*******************  菜单  **************************/
     auto options_menu = Menu::create();
     options_menu->setPosition(Vec2::ZERO);
-    black_layer->addChild(options_menu,2);
+    black_layer->addChild(options_menu, 2);
 
     // 重新开始按钮
     auto again_btn = MenuItemImage::create("/GamePlayScene/again_normal.png", "/GamePlayScene/again_selected.png");
     again_btn->setPosition(Vec2(visibleSize.width * 0.6, visibleSize.height * 0.3));
     again_btn->setCallback([this](Ref* psender) {
         // button_sound_effect();
-
         auto newMapScene = MAP_SCENE::create();
         newMapScene->initLevel(level);  // 初始化关卡
         Director::getInstance()->replaceScene(newMapScene);  // 切换到新的场景
+        isPause = 0;
+        currentWave;
         });
-    options_menu->addChild(again_btn,2);
+    options_menu->addChild(again_btn, 2);
 
     // 返回关卡选择按钮
     auto return_btn = MenuItemImage::create("/GamePlayScene/return_normal.png", "/GamePlayScene/return_selected.png");
     return_btn->setPosition(Vec2(visibleSize.width * 0.35, visibleSize.height * 0.3));
-    return_btn->setCallback([](Ref* psender) {
+    return_btn->setCallback([](Ref* psender) { 
+        isPause = 0;
+        currentWave = 1;
         // button_sound_effect();
         auto helloWorldScene = HelloWorld::createScene();  // 创建 HelloWorld 场景
         Director::getInstance()->replaceScene(helloWorldScene);  // 替换当前场景
+
         });
-    options_menu->addChild(return_btn,2);
+    options_menu->addChild(return_btn, 2);
+   
 }
-//胜利结算画面
-void GameMenu::showWinPopup() { 
+
+void GameMenu::showWinPopup() { //胜利结算画面
     isPause = true; // 停止游戏逻辑
+    clearAllVectors();
+    if (level == 0) {
+        bool isLevel2Unlocked = true;  //玩家解锁了第二关
+            // 使用 UserDefault 保存进度
+            cocos2d::UserDefault::getInstance()->setBoolForKey("level2Unlocked", isLevel2Unlocked);
+            cocos2d::UserDefault::getInstance()->flush();  // 确保立即写入
+    }
     /*******************************  数据更新  *****************************/
    // UserDefault::getInstance()->setIntegerForKey("money_statistics", UserDefault::getInstance()->getIntegerForKey("money_statistics") + coinNumber);
    // UserDefault::getInstance()->setIntegerForKey("adventure_statistics", level + 1);
@@ -463,16 +486,16 @@ void GameMenu::showWinPopup() {
     // 当前波数显示
     auto waves_label = Label::createWithTTF(std::to_string(currentWave / 10 % 10) + "   " + std::to_string(currentWave % 10), "/fonts/Marker Felt.ttf", 32);
     waves_label->setColor(Color3B::YELLOW);
-    waves_label->setPosition(Vec2(origin.x + visibleSize.width * 0.475 + 19, origin.y + visibleSize.height * 0.52-10));
+    waves_label->setPosition(Vec2(origin.x + visibleSize.width * 0.475 + 19, origin.y + visibleSize.height * 0.52 - 10));
     black_layer->addChild(waves_label, 2);
 
     // 波数显示
     auto waves_txt = Label::createWithTTF(std::to_string(allWaves), "/fonts/Marker Felt.ttf", 32);
-    waves_txt->setPosition(Vec2(origin.x + visibleSize.width * 0.58 - 50, origin.y + visibleSize.height * 0.52-10));
+    waves_txt->setPosition(Vec2(origin.x + visibleSize.width * 0.58 - 50, origin.y + visibleSize.height * 0.52 - 10));
     black_layer->addChild(waves_txt, 2);
 
     // 关卡显示
-    auto level_txt = Label::createWithTTF("0" + std::to_string(level), "/fonts/Marker Felt.ttf", 32);
+    auto level_txt = Label::createWithTTF("0" + std::to_string(level + 1), "/fonts/Marker Felt.ttf", 32);
     level_txt->setPosition(Vec2(origin.x + visibleSize.width * 0.4 + 50, origin.y + visibleSize.height * 0.43 + 20));
     black_layer->addChild(level_txt, 2);
 
@@ -485,19 +508,18 @@ void GameMenu::showWinPopup() {
     auto return_btn = MenuItemImage::create("/GamePlayScene/return_normal.png", "/GamePlayScene/return_selected.png");
     return_btn->setPosition(Vec2(visibleSize.width * 0.48, visibleSize.height * 0.35));
     return_btn->setCallback([](Ref* psender) {
-        // button_sound_effect();
-        auto helloWorldScene = HelloWorld::createScene();  // 创建 HelloWorld 场景
-        Director::getInstance()->replaceScene(helloWorldScene);  // 替换当前场景
+        CCLOG("Button clicked!");  // 调试输出
+        currentWave = 1;
+        isPause = 0;
+        clearAllVectors();
+        auto newhelloWorldScene = HelloWorld::createScene();  // 创建 HelloWorld 场景
+        Director::getInstance()->replaceScene(newhelloWorldScene);  // 替换当前场景
         });
     options_menu->addChild(return_btn, 2);
+ 
 }
 
-
-
-
-
 /*********************************************************/
-
 
 
 
@@ -539,13 +561,35 @@ bool MAP_SCENE::init() {
     if (!Scene::init()) {
         return false;
     }
-
     // 初始化场景的默认内容
     CCLOG("MAP_SCENE default init completed.");
+    // 创建触摸事件监听器
+  
+    // 调用 scheduleUpdate，使得 update 函数每帧被调用
+    this->scheduleUpdate();
 
     return true;
 }
+void MAP_SCENE::update(float deltaTime) {
+    // 更新游戏状态，例如萝卜血量、怪物位置等
 
+        // 判断游戏结束条件
+    if (carrotHP <= 0) {
+        carrotHP = 10;
+
+        GameMenu::getInstance()->showLosePopup();  // 使用单例调用
+        
+        return;
+    }
+    else if ((currentWave == allWaves + 1) && carrotHP > 0)
+    {
+        currentWave--;
+        GameMenu::getInstance()->showWinPopup();  // 使用单例调用
+        if (level == 0)isLevel2Unlocked = 1;
+       
+        return;
+    }
+}
 
 // 处理实时反馈的函数
 void MAP_SCENE::showBuildFeedback(int row, int col)
@@ -580,12 +624,13 @@ void MAP_SCENE::showBuildFeedback(int row, int col)
         handleTowerClick(row, col);
         updateordeleteTowerPreview(row, col);
     }
+
     else if (mapGrid[row][col] == BARRIER) {
-        if (clickedMonster != nullptr) {
-            clickedMonster->selected = false;
-            clickedMonster = nullptr;
+        if (previousSelectedMonster != nullptr) {
+            previousSelectedMonster->selected = false;
+            previousSelectedMonster = nullptr;
         }
-           
+
         Vec2 clickPosition = array_to_vec2(row, col);
 
         // 假设 BarrierManager 已经被初始化并作为类成员变量
@@ -602,8 +647,8 @@ void MAP_SCENE::showBuildFeedback(int row, int col)
             }
             else {
                 barrierManager->deselectBarrier();
-
             }
+
         }
     }
 
@@ -611,36 +656,31 @@ void MAP_SCENE::showBuildFeedback(int row, int col)
 
 void MAP_SCENE::handleMapAction(int row, int col)
 {
-    // 如果未选择防御塔，禁止其他交互
     if (!isTowerSelected)
     {
-        cocos2d::log("请先选择一个防御塔");
+        cocos2d::log("Please select a tower first");
         return;
     }
-
-    // 清除之前的提示
     clearWarningSprites();
-
-    // 根据点击的位置处理逻辑
+    
     if (mapGrid[row][col] == BARRIER)
     {
-        cocos2d::log("无法放置塔，位置被障碍物占用");
+        cocos2d::log("Cannot place tower, position is occupied by a barrier");
     }
     else if (mapGrid[row][col] == EXISTED_TOWER)
     {
-        cocos2d::log("该位置已有塔");
+        cocos2d::log("A tower already exists at this position");
     }
     else if (mapGrid[row][col] == PATH)
     {
-        cocos2d::log("该位置为路径，不能放置塔");
+        cocos2d::log("This position is a path, cannot place tower here");
     }
     else if (mapGrid[row][col] == SPACE)
     {
-        //map[row][col] = EXISTED_TOWER;
-        cocos2d::log("放置了防御塔");
+        cocos2d::log("Tower placed successfully");
     }
-
 }
+
 
 void MAP_SCENE::handleTowerClick(int row, int col)
 {
@@ -648,7 +688,7 @@ void MAP_SCENE::handleTowerClick(int row, int col)
     Tower* tower = getTowerAt(row, col);
     if (tower == nullptr)
     {
-        cocos2d::log("没有塔在此位置");
+        cocos2d::log("no tower");
         return;
     }
 
@@ -656,19 +696,19 @@ void MAP_SCENE::handleTowerClick(int row, int col)
     if (auto bottleTower = dynamic_cast<BottleTower*>(tower))
     {
         // 如果是 BottleTower 类型的塔
-        cocos2d::log("点击了 BottleTower");
+        cocos2d::log("clicked BottleTower");
         // 处理 BottleTower 的相关逻辑
     }
     else if (auto shitTower = dynamic_cast<ShitTower*>(tower))
     {
         // 如果是 ShitTower 类型的塔
-        cocos2d::log("点击了 ShitTower");
+        cocos2d::log("clicked ShitTower");
         // 处理 ShitTower 的相关逻辑
     }
     else if (auto sunflowerTower = dynamic_cast<SunflowerTower*>(tower))
     {
         // 如果是 SunflowerTower 类型的塔
-        cocos2d::log("点击了 SunflowerTower");
+        cocos2d::log("clicked SunflowerTower");
         // 处理 SunflowerTower 的相关逻辑
     }
     else
@@ -702,7 +742,6 @@ void MAP_SCENE::addTowerPreview(int row, int col)
     {
         offsetXForPreview += 64;  // 增加偏移量，确保按钮不会被遮挡
     }
-
     // 计算按钮位置，防止超出屏幕范围
     int screenWidth = 12;  // 地图的列数
     int screenHeight = 8;  // 地图的行数
@@ -746,6 +785,7 @@ void MAP_SCENE::addTowerPreview(int row, int col)
 }
 
 
+
 void MAP_SCENE::onTowerPreviewClicked(int towerIndex, int row, int col)
 {
     // 根据点击的塔类型选择相应图片并创建对应的塔类
@@ -766,7 +806,7 @@ void MAP_SCENE::onTowerPreviewClicked(int towerIndex, int row, int col)
     case 2:
         // 创建 SunflowerTower 
         tower = SunflowerTower::create("GamePlayScene/sunflower_level_1.png");
-        coinNumber -=200;
+        coinNumber -= 200;
         break;
     default:
         return; // 如果没有匹配的塔类型，直接返回
@@ -779,6 +819,7 @@ void MAP_SCENE::onTowerPreviewClicked(int towerIndex, int row, int col)
         int tag = row * 100 + col;  // 为塔分配唯一的tag
         tower->setTag(tag);  // 给塔设置tag
         this->addChild(tower, 1);  // 将塔添加到场景
+
     }
     towerArray[row][col] = tower;
 
@@ -828,39 +869,48 @@ void MAP_SCENE::updateordeleteTowerPreview(int row, int col)
     }
 
     // 获取塔的升级费用
-   const int upgradeCost = tower->getUpgradeCost();
-   const int sellPrice = tower->getsellPrice();
+    const int upgradeCost = tower->getUpgradeCost();
+    const int sellPrice = tower->getsellPrice();
 
-   // 创建升级按钮
-   auto upgradeButton = ui::Button::create("GamePlayScene/CanUpLevel.png");
+    // 创建升级按钮
+    auto upgradeButton = ui::Button::create("GamePlayScene/CanUpLevel.png");
 
-   if (coinNumber < tower->getUpgradeCost())
-   {
-       upgradeButton->loadTextures("GamePlayScene/CantUpLevel.PNG", "GamePlayScene/CantUpLevel.PNG", "");  // 显示“已达最大级别”提示
-       upgradeButton->setEnabled(false);  // 禁用按钮，无法点击
-   }
-   upgradeButton->setPosition(array_to_vec2(row, col) + Vec2(0, 80));  // 按钮位置
-   upgradeButton->setTitleText(std::to_string(upgradeCost));           // 设置显示升级费用
-   upgradeButton->setTitleColor(Color3B::BLACK);
-   upgradeButton->setTitleFontSize(20);
-   auto up_label = upgradeButton->getTitleLabel();
-   up_label->setPosition(Vec2(upgradeButton->getContentSize().width / 2 + 8,
-       upgradeButton->getContentSize().height / 2) + Vec2(0, -25));
+    if (coinNumber < tower->getUpgradeCost())
+    {
+        upgradeButton->loadTextures("GamePlayScene/CantUpLevel.PNG", "GamePlayScene/CantUpLevel.PNG", "");  // 显示“已达最大级别”提示
+        upgradeButton->setEnabled(false);  // 禁用按钮，无法点击
+    }
+    upgradeButton->setPosition(array_to_vec2(row, col) + Vec2(0, 80));  // 按钮位置
+    upgradeButton->setTitleText(std::to_string(upgradeCost));           // 设置显示升级费用
+    upgradeButton->setTitleColor(Color3B::BLACK);
+    upgradeButton->setTitleFontSize(20);
+    auto up_label = upgradeButton->getTitleLabel();
+    up_label->setPosition(Vec2(upgradeButton->getContentSize().width / 2 + 8,
+        upgradeButton->getContentSize().height / 2) + Vec2(0, -25));
 
-   if (tower->getLevel() == 3)
-   {
-       upgradeButton->loadTextures("GamePlayScene/cant_update.PNG", "GamePlayScene/cant_update.PNG", "");  // 显示“已达最大级别”提示
-       upgradeButton->setTitleText("");  // 清空按钮的文字
-       upgradeButton->setEnabled(false);  // 禁用按钮，无法点击
-   }
+    if (tower->getLevel() == 3)
+    {
+        upgradeButton->loadTextures("GamePlayScene/cant_update.PNG", "GamePlayScene/cant_update.PNG", "");  // 显示“已达最大级别”提示
+        upgradeButton->setTitleText("");  // 清空按钮的文字
+        upgradeButton->setEnabled(false);  // 禁用按钮，无法点击
+    }
 
-   this->addChild(upgradeButton, 2);
+    this->addChild(upgradeButton, 2);
 
-   // 保存当前升级按钮
-   currentUpgradeButton = upgradeButton;
+    // 保存当前升级按钮
+    currentUpgradeButton = upgradeButton;
     // 按钮点击事件：执行升级并移除按钮
-    upgradeButton->addClickEventListener([this, tower, row, col, upgradeCost](Ref* sender) mutable{
+    upgradeButton->addClickEventListener([this, tower, row, col, upgradeCost](Ref* sender) mutable {
+        // 获取当前背景音乐的音量，保留背景音乐的音量不变
+        float bgVolume = CocosDenshion::SimpleAudioEngine::getInstance()->getBackgroundMusicVolume();
+        // 设置背景音乐音量为原来的值，以免被修改
+        CocosDenshion::SimpleAudioEngine::getInstance()->setBackgroundMusicVolume(bgVolume);
+        // 播放sell_tower.mp3音效，增加音量（不影响背景音乐）
+        CocosDenshion::SimpleAudioEngine::getInstance()->setEffectsVolume(6.0f);  // 设置音效的音量，增加音量
+        CocosDenshion::SimpleAudioEngine::getInstance()->playEffect("sound/uplevel_tower", false);
+
         upgradeTower(row, col);
+
         coinNumber -= upgradeCost;
 
         // 升级后移除按钮
@@ -895,6 +945,15 @@ void MAP_SCENE::updateordeleteTowerPreview(int row, int col)
 
     // 删除按钮点击事件：删除塔
     deleteButton->addClickEventListener([this, tower, row, col, sellPrice](Ref* sender) mutable {
+
+        // 获取当前背景音乐的音量，保留背景音乐的音量不变
+        float bgVolume = CocosDenshion::SimpleAudioEngine::getInstance()->getBackgroundMusicVolume();
+        // 设置背景音乐音量为原来的值，以免被修改
+        CocosDenshion::SimpleAudioEngine::getInstance()->setBackgroundMusicVolume(bgVolume);
+        // 播放sell_tower.mp3音效，增加音量（不影响背景音乐）
+        CocosDenshion::SimpleAudioEngine::getInstance()->setEffectsVolume(5.0f);  // 设置音效的音量，增加音量
+        CocosDenshion::SimpleAudioEngine::getInstance()->playEffect("sound/sell_tower.mp3", false);
+
         deleteTower(row, col);
         coinNumber += sellPrice;
         // 移除删除按钮
@@ -954,29 +1013,31 @@ void MAP_SCENE::updateordeleteTowerPreview(int row, int col)
     _eventDispatcher->addEventListenerWithSceneGraphPriority(touchListener, this);
 }
 
+
+
 void MAP_SCENE::deleteTower(int row, int col)
 {
     // 获取指定位置的塔对象
     Tower* tower = getTowerAt(row, col);
 
-    if (tower == nullptr)
-    {
-        cocos2d::log("该位置没有塔，无法删除！");
-        return;
-    }
+if (tower == nullptr)
+{
+    cocos2d::log("该位置没有塔，无法删除！");
+    return;
+}
 
-    // 从父节点中移除塔的可视化节点（如果有显示的 Sprite 或其他内容）
-    if (tower != nullptr)
-    {
-        tower->removeFromParent();  // 删除塔的精灵（Sprite）
-    }
+// 从父节点中移除塔的可视化节点（如果有显示的 Sprite 或其他内容）
+if (tower != nullptr)
+{
+    tower->removeFromParent();  // 删除塔的精灵（Sprite）
+}
 
-    // 从管理数组或数据结构中移除塔对象引用
-    towerArray[row][col] = nullptr;  // 清除塔的引用
-    mapGrid[row][col] = SPACE;
+// 从管理数组或数据结构中移除塔对象引用
+towerArray[row][col] = nullptr;  // 清除塔的引用
+mapGrid[row][col] = SPACE;
 
 
-    cocos2d::log("塔在位置 (%d, %d) 已成功删除！", row, col);
+cocos2d::log("塔在位置 (%d, %d) 已成功删除！", row, col);
 }
 void MAP_SCENE::upgradeTower(int row, int col)
 {
@@ -1008,7 +1069,6 @@ Tower* MAP_SCENE::getTowerAt(int row, int col) {
     return towerArray[row][col];
 }
 
-
 void  MAP_SCENE::initLevel(int level)// 初始化关卡的方法
 {
     std::string backgroundImage;
@@ -1019,7 +1079,7 @@ void  MAP_SCENE::initLevel(int level)// 初始化关卡的方法
 
         break;
     case 1:
-        backgroundImage ="/GamePlayScene/map2.png";
+        backgroundImage = "/GamePlayScene/map2.png";
         setBackground(backgroundImage);
         break;
     case 2:
@@ -1032,11 +1092,11 @@ void  MAP_SCENE::initLevel(int level)// 初始化关卡的方法
         break;
     }
     initializeMapArray(level);
-    initResources(); 初始化游戏资源
-    
+    initResources();
+
     // 设置游戏层的名字
     this->setName("PlayingLevel");  // 设置当前层的名字
-     // 添加游戏菜单到场景
+    // 添加游戏菜单到场景
     auto menuLayer = GameMenu::createLayer();
     if (menuLayer) {
         menuLayer->setName("GameMenu");
@@ -1046,72 +1106,81 @@ void  MAP_SCENE::initLevel(int level)// 初始化关卡的方法
     //萝卜
     globalCarrot = Carrot::create();
     this->addChild(globalCarrot);  // 将 Carrot 实例添加到场景中
-  
-    auto delay = DelayTime::create(5.0f);
+
+    MonsterCreate* monster_create = NULL;
+    // 明确指定 DelayTime 类型
+    cocos2d::DelayTime* delay = cocos2d::DelayTime::create(6);  // 显式指定为 cocos2d::DelayTime 类型
 
     // 创建一个延时6秒的动作执行怪物创建
-    auto createMonsters = CallFunc::create([this, level]() {  // 显式捕获 `level`
+    auto createMonsters = CallFunc::create([this, &monster_create, level]() {
         // 创建 MonsterCreate 实例
-        auto monster_create = MonsterCreate::create();
+        monster_create = MonsterCreate::create();
         monster_create->MonsterWaves(level);  // 使用捕获的 `level`
         this->addChild(monster_create, 100);
+
+        // 创建触摸事件监听器
+        auto listener1 = EventListenerTouchOneByOne::create();
+
+        // 触摸开始时的回调函数
+        listener1->onTouchBegan = [=](Touch* touch, Event* event) {
+            Vec2 touchLocation = touch->getLocation();
+            array arr = vec2_to_array(touchLocation);
+            handleMapAction(arr.row, arr.col);
+            return true; // 返回true表示吞噬该事件，其他地方不再处理
+            };
+
+        // 触摸结束时的回调函数
+        listener1->onTouchEnded = [=](Touch* touch, Event* event) {
+            // 触摸结束，确保放置塔
+            Vec2 touchLocation = touch->getLocation();
+            array arr = vec2_to_array(touchLocation);
+            // 检查是否点击到了怪物
+            Monster* clickedMonster = checkMonsterClicked(touchLocation);
+            // 如果点击到怪物，则不执行后续操作
+            if (clickedMonster != nullptr) {
+
+                // 如果当前有选中的怪物，取消选中状态
+                if (previousSelectedMonster != nullptr) {
+                    previousSelectedMonster->selected = false;  // 取消之前选中的怪物
+                }
+                // 选中当前点击到的怪物
+                clickedMonster->selected = true;
+                // 保存当前点击的怪物为之前选中的怪物
+                previousSelectedMonster = clickedMonster;
+                barrierManager->deselectBarrier();  // 取消之前的选中障碍物  
+                CCLOG("Clicked on monster: %p", clickedMonster);
+                return;  // 返回，不再执行后续的塔放置操作
+            }
+            else {
+                // 如果没有点击到怪物，执行地图操作和放置塔
+                handleMapAction(arr.row, arr.col);
+                showBuildFeedback(arr.row, arr.col);
+            }
+            };
+
+        // 添加触摸事件监听器
+        _eventDispatcher->addEventListenerWithSceneGraphPriority(listener1, this);
         });
 
-    auto sequence = Sequence::create(delay, createMonsters, nullptr);
+    // 创建一个 Sequence 动作，先延时6秒，再执行怪物生成
+    auto sequence = cocos2d::Sequence::create(delay, createMonsters, nullptr);
+
+    // 确保 sequence 已经正确创建
     this->runAction(sequence);
 
-    // 创建触摸事件监听器
-    auto listener1 = EventListenerTouchOneByOne::create();
-    // 触摸开始时的回调函数
-    listener1->onTouchBegan = [=](Touch* touch, Event* event) {
-        Vec2 touchLocation = touch->getLocation();
-        array arr = vec2_to_array(touchLocation);
-        handleMapAction(arr.row, arr.col);
-        return true; // 返回true表示吞噬该事件，其他地方不再处理
-        };
-        // 触摸结束时的回调函数
-    listener1->onTouchEnded = [=](Touch* touch, Event* event) {
-        // 触摸结束，确保放置塔
-        Vec2 touchLocation = touch->getLocation();
-        array arr = vec2_to_array(touchLocation);
-        // 检查是否点击到了怪物
-        Monster* clickedMonster = checkMonsterClicked(touchLocation);
-        // 如果点击到怪物，则不执行后续操作
-        if (clickedMonster != nullptr) {
-               // 如果当前有选中的怪物，取消选中状态
-           if (previousSelectedMonster != nullptr) {
-           previousSelectedMonster->selected = false;  // 取消之前选中的怪物
-           }
-          // 选中当前点击到的怪物
-          clickedMonster->selected = true;
-          // 保存当前点击的怪物为之前选中的怪物
-          //previousSelectedMonster = clickedMonster;
-          barrierManager->deselectBarrier();  // 取消之前的选中障碍物  
-          CCLOG("Clicked on monster: %p", clickedMonster);
-           return;  // 返回，不再执行后续的塔放置操作
-        }
-        else{
-            // 如果没有点击到怪物，执行地图操作和放置塔
-            handleMapAction(arr.row, arr.col);
-            showBuildFeedback(arr.row, arr.col);
-        }
-        };
-   
-    _eventDispatcher->addEventListenerWithSceneGraphPriority(listener1, this);
 }
 
 
 
-// 检查是否点击到怪物，并返回被点击的怪物指针
+
 Monster* MAP_SCENE::checkMonsterClicked(Vec2 touchLocation) {
     for (auto monster : monsters) {
-        if (monster->getBoundingBox().containsPoint(touchLocation)) {
-            // 点击到了怪物，返回怪物的指针
-            CCLOG("Clicked on monster at position: (%f, %f)", monster->getPositionX(), monster->getPositionY());
-            return monster;  // 返回点击到的怪物
+        // 检查怪物是否有效，并且触摸位置是否在怪物的边界内
+        if (monster != nullptr && monster->getBoundingBox().containsPoint(touchLocation)) {
+            return monster;  // 返回被点击的怪物指针
         }
     }
-    return nullptr;  // 没有点击到怪物，返回 nullptr
+    return nullptr;  // 如果没有点击到怪物，返回nullptr
 }
 
 
@@ -1149,35 +1218,38 @@ void MAP_SCENE::onEnterGame() {
     this->initLevel(GameManager::getInstance()->level);
     this->initWaves(GameManager::getInstance()->allWaves);
 }*/
+
 void  MAP_SCENE::initResources() {
     switch (level) {
     case 0:
         coinNumber = 450;
-        allWaves = 15;
+        allWaves = 5;
         carrotHP = 10;
+        currentWave = 1;
         break;
     case 1:
         coinNumber = 550;
-        allWaves = 25;
+        allWaves = 5;
         carrotHP = 10;
+        currentWave = 1;
         break;
     case 2:
         coinNumber = 1000;
-        allWaves = 30;
+        allWaves = 5;
+        currentWave = 1;
         break;
-    }   
+    }
 }
 
-
 void MAP_SCENE::initializeMapArray(int level) {
-   
-     for (int i = 0; i < 12; i++) {
-         mapGrid[0][i] = MENU;
-     }
-     barrierManager =BarrierManager::create();
+
+    for (int i = 0; i < 12; i++) {
+        mapGrid[0][i] = MENU;
+    }
+    barrierManager = BarrierManager::create();
     switch (level) {
     case 0:
-        
+
         // 添加不同位置和类型的障碍物
         barrierManager->BarrierAppear(BARRIER_1_1, 320, 448, 1);
         barrierManager->BarrierAppear(BARRIER_1_1, 1216, 448, 1);
@@ -1188,9 +1260,8 @@ void MAP_SCENE::initializeMapArray(int level) {
         barrierManager->BarrierAppear(BARRIER_4_2, 512, 768, 4);
         barrierManager->BarrierAppear(BARRIER_4_2, 1024, 768, 4);
 
-       this->addChild(barrierManager);
-       // barrierManager->createMouseEventListener();
-        //map1
+        this->addChild(barrierManager);
+         //map1
         mapGrid[2][1] = PATH;   // (2, 3) 是路径
         mapGrid[3][1] = PATH;
         mapGrid[4][1] = PATH;
@@ -1214,22 +1285,22 @@ void MAP_SCENE::initializeMapArray(int level) {
         mapGrid[vec2_to_array(Vec2(576, 576)).row][vec2_to_array(Vec2(576, 576)).col] = BARRIER;
         mapGrid[vec2_to_array(Vec2(960, 576)).row][vec2_to_array(Vec2(960, 576)).col] = BARRIER;
 
-        mapGrid[vec2_to_array(Vec2(768-64, 320)).row][vec2_to_array(Vec2(768-64, 320)).col] = BARRIER;//2
+        mapGrid[vec2_to_array(Vec2(768 - 64, 320)).row][vec2_to_array(Vec2(768 - 64, 320)).col] = BARRIER;//2
         mapGrid[vec2_to_array(Vec2(768 + 64, 320)).row][vec2_to_array(Vec2(768 + 64, 320)).col] = BARRIER;//2
 
-        mapGrid[vec2_to_array(Vec2(768-64, 768-64)).row][vec2_to_array(Vec2(768-64, 768-64)).col] = BARRIER;//4
+        mapGrid[vec2_to_array(Vec2(768 - 64, 768 - 64)).row][vec2_to_array(Vec2(768 - 64, 768 - 64)).col] = BARRIER;//4
         mapGrid[vec2_to_array(Vec2(768 - 64, 768 + 64)).row][vec2_to_array(Vec2(768 - 64, 768 + 64)).col] = BARRIER;//4
         mapGrid[vec2_to_array(Vec2(768 + 64, 768 - 64)).row][vec2_to_array(Vec2(768 + 64, 768 - 64)).col] = BARRIER;//4
         mapGrid[vec2_to_array(Vec2(768 + 64, 768 + 64)).row][vec2_to_array(Vec2(768 + 64, 768 + 64)).col] = BARRIER;//4
 
-        mapGrid[vec2_to_array(Vec2(512-64, 768-64)).row][vec2_to_array(Vec2(512-64, 768-64)).col] = BARRIER;//4
-        mapGrid[vec2_to_array(Vec2(512+64, 768-64)).row][vec2_to_array(Vec2(512+64, 768-64)).col] = BARRIER;//4
+        mapGrid[vec2_to_array(Vec2(512 - 64, 768 - 64)).row][vec2_to_array(Vec2(512 - 64, 768 - 64)).col] = BARRIER;//4
+        mapGrid[vec2_to_array(Vec2(512 + 64, 768 - 64)).row][vec2_to_array(Vec2(512 + 64, 768 - 64)).col] = BARRIER;//4
         mapGrid[vec2_to_array(Vec2(512 - 64, 768 + 64)).row][vec2_to_array(Vec2(512 - 64, 768 + 64)).col] = BARRIER;//4
         mapGrid[vec2_to_array(Vec2(512 + 64, 768 + 64)).row][vec2_to_array(Vec2(512 + 64, 768 + 64)).col] = BARRIER;//4
 
 
 
-        mapGrid[vec2_to_array(Vec2(1024-64, 768-64)).row][vec2_to_array(Vec2(1024-64, 768-64)).col] = BARRIER;//4
+        mapGrid[vec2_to_array(Vec2(1024 - 64, 768 - 64)).row][vec2_to_array(Vec2(1024 - 64, 768 - 64)).col] = BARRIER;//4
         mapGrid[vec2_to_array(Vec2(1024 - 64, 768 + 64)).row][vec2_to_array(Vec2(1024 - 64, 768 + 64)).col] = BARRIER;//4
         mapGrid[vec2_to_array(Vec2(1024 + 64, 768 - 64)).row][vec2_to_array(Vec2(1024 + 64, 768 - 64)).col] = BARRIER;//4
         mapGrid[vec2_to_array(Vec2(1024 + 64, 768 + 64)).row][vec2_to_array(Vec2(1024 + 64, 768 + 64)).col] = BARRIER;//4
@@ -1251,21 +1322,18 @@ void MAP_SCENE::initializeMapArray(int level) {
         barrierManager->BarrierAppear(BARRIER_4_2, 1408, 512, 4);
         barrierManager->BarrierAppear(BARRIER_4_2, 384, 768, 4);
 
-       this->addChild(barrierManager);
-        //barrierManager->createMouseEventListener();
-
+        this->addChild(barrierManager);
+        mapGrid[3][0] = PATH;
         mapGrid[3][1] = PATH;
         mapGrid[3][2] = PATH;
         mapGrid[3][3] = PATH;
         mapGrid[3][4] = PATH;
-        mapGrid[3][5] = PATH;
+        mapGrid[2][5] = PATH;
         mapGrid[2][6] = PATH;
         mapGrid[2][7] = PATH;
         mapGrid[2][8] = PATH;
-        mapGrid[2][9] = PATH;
-        mapGrid[3][9] = PATH;
-        mapGrid[4][9] = PATH;
-        mapGrid[5][9] = PATH;
+        mapGrid[3][8] = PATH;
+        mapGrid[4][8] = PATH;
         mapGrid[5][8] = PATH;
         mapGrid[5][7] = PATH;
         mapGrid[5][6] = PATH;
@@ -1273,7 +1341,9 @@ void MAP_SCENE::initializeMapArray(int level) {
         mapGrid[5][4] = PATH;
         mapGrid[5][3] = PATH;
         mapGrid[5][2] = PATH;
-        mapGrid[6][2] = PATH;
+        mapGrid[5][1] = PATH;
+        mapGrid[6][1] = PATH;
+        mapGrid[7][1] = PATH;
         mapGrid[7][2] = PATH;
         mapGrid[7][3] = PATH;
         mapGrid[7][4] = PATH;
@@ -1283,7 +1353,6 @@ void MAP_SCENE::initializeMapArray(int level) {
         mapGrid[7][8] = PATH;
         mapGrid[7][9] = PATH;
         mapGrid[7][10] = PATH;
-        mapGrid[7][11] = PATH;
         mapGrid[vec2_to_array(Vec2(836, 832)).row][vec2_to_array(Vec2(836, 832)).col] = BARRIER;
         mapGrid[vec2_to_array(Vec2(836, 192)).row][vec2_to_array(Vec2(836, 192)).col] = BARRIER;
         mapGrid[vec2_to_array(Vec2(964, 192)).row][vec2_to_array(Vec2(964, 192)).col] = BARRIER;
@@ -1293,156 +1362,158 @@ void MAP_SCENE::initializeMapArray(int level) {
         mapGrid[vec2_to_array(Vec2(1088, 832)).row][vec2_to_array(Vec2(1088, 832)).col] = BARRIER;
         mapGrid[vec2_to_array(Vec2(832, 576)).row][vec2_to_array(Vec2(832, 576)).col] = BARRIER;
         //2
-        mapGrid[vec2_to_array(Vec2(512+64, 192)).row][vec2_to_array(Vec2(512+64, 192)).col] = BARRIER;
-        mapGrid[vec2_to_array(Vec2(512-64, 192)).row][vec2_to_array(Vec2(512-64, 192)).col] = BARRIER;
-        mapGrid[vec2_to_array(Vec2(640-64, 448)).row][vec2_to_array(Vec2(640-64, 448)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(512 + 64, 192)).row][vec2_to_array(Vec2(512 + 64, 192)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(512 - 64, 192)).row][vec2_to_array(Vec2(512 - 64, 192)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(640 - 64, 448)).row][vec2_to_array(Vec2(640 - 64, 448)).col] = BARRIER;
         mapGrid[vec2_to_array(Vec2(640 + 64, 448)).row][vec2_to_array(Vec2(640 + 64, 448)).col] = BARRIER;
         //4
-        mapGrid[vec2_to_array(Vec2(1024-64, 512-64)).row][vec2_to_array(Vec2(1024-64, 512-64)).col] = BARRIER;
-        mapGrid[vec2_to_array(Vec2(1024-64, 512+64)).row][vec2_to_array(Vec2(1024-64, 512+64)).col] = BARRIER;
-        mapGrid[vec2_to_array(Vec2(1024 + 64, 512 - 64)).row][vec2_to_array(Vec2(1024+64, 512-64)).col] = BARRIER;
-        mapGrid[vec2_to_array(Vec2(1024 + 64, 512 + 64)).row][vec2_to_array(Vec2(1024+64, 512 + 64)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(1024 - 64, 512 - 64)).row][vec2_to_array(Vec2(1024 - 64, 512 - 64)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(1024 - 64, 512 + 64)).row][vec2_to_array(Vec2(1024 - 64, 512 + 64)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(1024 + 64, 512 - 64)).row][vec2_to_array(Vec2(1024 + 64, 512 - 64)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(1024 + 64, 512 + 64)).row][vec2_to_array(Vec2(1024 + 64, 512 + 64)).col] = BARRIER;
 
-        mapGrid[vec2_to_array(Vec2(1408-64, 512-64)).row][vec2_to_array(Vec2(1408-64, 512-64)).col] = BARRIER;
-        mapGrid[vec2_to_array(Vec2(1408-64, 512+64)).row][vec2_to_array(Vec2(1408-64, 512+64)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(1408 - 64, 512 - 64)).row][vec2_to_array(Vec2(1408 - 64, 512 - 64)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(1408 - 64, 512 + 64)).row][vec2_to_array(Vec2(1408 - 64, 512 + 64)).col] = BARRIER;
         mapGrid[vec2_to_array(Vec2(1408 + 64, 512 - 64)).row][vec2_to_array(Vec2(1408 + 64, 512 - 64)).col] = BARRIER;
         mapGrid[vec2_to_array(Vec2(1408 + 64, 512 + 64)).row][vec2_to_array(Vec2(1408 + 64, 512 + 64)).col] = BARRIER;
 
-        mapGrid[vec2_to_array(Vec2(384-64, 768-64)).row][vec2_to_array(Vec2(384-64, 768-64)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(384 - 64, 768 - 64)).row][vec2_to_array(Vec2(384 - 64, 768 - 64)).col] = BARRIER;
         mapGrid[vec2_to_array(Vec2(384 - 64, 768 + 64)).row][vec2_to_array(Vec2(384 - 64, 768 + 64)).col] = BARRIER;
         mapGrid[vec2_to_array(Vec2(384 + 64, 768 - 64)).row][vec2_to_array(Vec2(384 + 64, 768 - 64)).col] = BARRIER;
         mapGrid[vec2_to_array(Vec2(384 + 64, 768 + 64)).row][vec2_to_array(Vec2(384 + 64, 768 + 64)).col] = BARRIER;
 
+
+
+
         break;
-  case 2:
-     
-          // 添加不同位置和类型的障碍物
-          barrierManager->BarrierAppear(BARRIER_1_1, 64, 832, 1);
-          barrierManager->BarrierAppear(BARRIER_1_1, 192, 832, 1);
-          barrierManager->BarrierAppear(BARRIER_1_2, 320, 832, 1);
-          barrierManager->BarrierAppear(BARRIER_1_1, 448, 832, 1);
-          barrierManager->BarrierAppear(BARRIER_1_2, 576, 832, 1);
-          barrierManager->BarrierAppear(BARRIER_1_2, 960, 832, 1);
-          barrierManager->BarrierAppear(BARRIER_1_2, 1088, 832, 1);
-          barrierManager->BarrierAppear(BARRIER_1_1, 1472, 832, 1);
-          barrierManager->BarrierAppear(BARRIER_2_1, 1280, 832, 2);
-          barrierManager->BarrierAppear(BARRIER_1_2, 832, 448, 1);
-          barrierManager->BarrierAppear(BARRIER_1_2, 64, 704, 1);
-          barrierManager->BarrierAppear(BARRIER_1_1, 64, 576, 1);
-          barrierManager->BarrierAppear(BARRIER_1_2, 1472, 704, 1);
-          barrierManager->BarrierAppear(BARRIER_1_1, 1472, 576, 1);
-          barrierManager->BarrierAppear(BARRIER_1_2, 1472, 448, 1);
-          barrierManager->BarrierAppear(BARRIER_1_1, 1472, 320, 1);
-          barrierManager->BarrierAppear(BARRIER_1_2, 1472, 192, 1);
-          barrierManager->BarrierAppear(BARRIER_1_1, 1344, 192, 1);
-          barrierManager->BarrierAppear(BARRIER_1_2, 960, 64, 1);
-          barrierManager->BarrierAppear(BARRIER_1_1, 832, 64, 1);
 
-          barrierManager->BarrierAppear(BARRIER_2_1, 512, 704, 2);
-          barrierManager->BarrierAppear(BARRIER_2_1, 1152, 64, 2);
-          barrierManager->BarrierAppear(BARRIER_2_1, 768, 320, 2);
-          barrierManager->BarrierAppear(BARRIER_2_2, 512, 576, 2);
-          barrierManager->BarrierAppear(BARRIER_4_1, 128, 384, 4);
-          barrierManager->BarrierAppear(BARRIER_4_1, 512, 256, 4);
-          barrierManager->BarrierAppear(BARRIER_4_1, 1152, 512, 4);
-          barrierManager->BarrierAppear(BARRIER_4_2, 768, 768, 4);
-          barrierManager->BarrierAppear(BARRIER_4_2, 256, 640, 4);
-         
-      
+    case 2:
 
-     this->addChild(barrierManager);
-     //barrierManager->createMouseEventListener();
-      mapGrid[4][2] = PATH;
-      mapGrid[5][2] = PATH;
-      mapGrid[6][2] = PATH;
-      mapGrid[7][2] = PATH;
-      mapGrid[4][3] = PATH;
-      mapGrid[4][4] = PATH;
-      mapGrid[4][5] = PATH;
-      mapGrid[3][5] = PATH;
-      mapGrid[3][6] = PATH;
-      mapGrid[3][7] = PATH;
-      mapGrid[2][7] = PATH;
-      mapGrid[2][8] = PATH;
-      mapGrid[2][9] = PATH;
-      mapGrid[2][10] = PATH;
-      mapGrid[3][10] = PATH;
-      mapGrid[4][10] = PATH;
-      mapGrid[5][10] = PATH;
-      mapGrid[5][9] = PATH;
-      mapGrid[5][8] = PATH;
-      mapGrid[5][7] = PATH;
-      mapGrid[6][7] = PATH;
-      mapGrid[6][6] = PATH;
-      mapGrid[6][5] = PATH;
-      mapGrid[7][5] = PATH;
-      mapGrid[7][4] = PATH;
-      mapGrid[7][3] = PATH;
-      mapGrid[7][2] = PATH;
+        // 添加不同位置和类型的障碍物
+        barrierManager->BarrierAppear(BARRIER_1_1, 64, 832, 1);
+        barrierManager->BarrierAppear(BARRIER_1_1, 192, 832, 1);
+        barrierManager->BarrierAppear(BARRIER_1_2, 320, 832, 1);
+        barrierManager->BarrierAppear(BARRIER_1_1, 448, 832, 1);
+        barrierManager->BarrierAppear(BARRIER_1_2, 576, 832, 1);
+        barrierManager->BarrierAppear(BARRIER_1_2, 960, 832, 1);
+        barrierManager->BarrierAppear(BARRIER_1_2, 1088, 832, 1);
+        barrierManager->BarrierAppear(BARRIER_1_1, 1472, 832, 1);
+        barrierManager->BarrierAppear(BARRIER_2_1, 1280, 832, 2);
+        barrierManager->BarrierAppear(BARRIER_1_2, 832, 448, 1);
+        barrierManager->BarrierAppear(BARRIER_1_2, 64, 704, 1);
+        barrierManager->BarrierAppear(BARRIER_1_1, 64, 576, 1);
+        barrierManager->BarrierAppear(BARRIER_1_2, 1472, 704, 1);
+        barrierManager->BarrierAppear(BARRIER_1_1, 1472, 576, 1);
+        barrierManager->BarrierAppear(BARRIER_1_2, 1472, 448, 1);
+        barrierManager->BarrierAppear(BARRIER_1_1, 1472, 320, 1);
+        barrierManager->BarrierAppear(BARRIER_1_2, 1472, 192, 1);
+        barrierManager->BarrierAppear(BARRIER_1_1, 1344, 192, 1);
+        barrierManager->BarrierAppear(BARRIER_1_2, 960, 64, 1);
+        barrierManager->BarrierAppear(BARRIER_1_1, 832, 64, 1);
 
-      mapGrid[vec2_to_array(Vec2(64, 832)).row][vec2_to_array(Vec2(64, 832)).col] = BARRIER;
-      mapGrid[vec2_to_array(Vec2(192, 832)).row][vec2_to_array(Vec2(192, 832)).col] = BARRIER;
-      mapGrid[vec2_to_array(Vec2(320, 832)).row][vec2_to_array(Vec2(320, 832)).col] = BARRIER;
-      mapGrid[vec2_to_array(Vec2(448, 832)).row][vec2_to_array(Vec2(448, 832)).col] = BARRIER;
-      mapGrid[vec2_to_array(Vec2(576, 832)).row][vec2_to_array(Vec2(1472, 832)).col] = BARRIER;
-      mapGrid[vec2_to_array(Vec2(960, 832)).row][vec2_to_array(Vec2(960, 832)).col] = BARRIER;
-      mapGrid[vec2_to_array(Vec2(1088, 832)).row][vec2_to_array(Vec2(1088, 832)).col] = BARRIER;
-      mapGrid[vec2_to_array(Vec2(1472, 832)).row][vec2_to_array(Vec2(1472, 832)).col] = BARRIER;
-      mapGrid[vec2_to_array(Vec2(1280, 832)).row][vec2_to_array(Vec2(1280, 832)).col] = BARRIER;
-      mapGrid[vec2_to_array(Vec2(832, 448)).row][vec2_to_array(Vec2(832, 448)).col] = BARRIER;
-      mapGrid[vec2_to_array(Vec2(64, 704)).row][vec2_to_array(Vec2(64, 704)).col] = BARRIER;
-      mapGrid[vec2_to_array(Vec2(64, 576)).row][vec2_to_array(Vec2(64, 576)).col] = BARRIER;
-      mapGrid[vec2_to_array(Vec2(1472, 704)).row][vec2_to_array(Vec2(1472, 704)).col] = BARRIER;
-      mapGrid[vec2_to_array(Vec2(1472, 576)).row][vec2_to_array(Vec2(1472, 576)).col] = BARRIER;
-      mapGrid[vec2_to_array(Vec2(1472, 448)).row][vec2_to_array(Vec2(1472, 448)).col] = BARRIER;
-      mapGrid[vec2_to_array(Vec2(1472, 320)).row][vec2_to_array(Vec2(1472, 320)).col] = BARRIER;
-      mapGrid[vec2_to_array(Vec2(1472, 192)).row][vec2_to_array(Vec2(1472, 192)).col] = BARRIER;
-      mapGrid[vec2_to_array(Vec2(1344, 192)).row][vec2_to_array(Vec2(1344, 192)).col] = BARRIER;
-      mapGrid[vec2_to_array(Vec2(960, 64)).row][vec2_to_array(Vec2(960, 64)).col] = BARRIER;
-      mapGrid[vec2_to_array(Vec2(832, 64)).row][vec2_to_array(Vec2(832, 64)).col] = BARRIER;
-    
-      //2
-      mapGrid[vec2_to_array(Vec2(512-64, 704)).row][vec2_to_array(Vec2(512-64, 704)).col] = BARRIER;
-      mapGrid[vec2_to_array(Vec2(512+64, 704)).row][vec2_to_array(Vec2(512+64, 704)).col] = BARRIER;
-      mapGrid[vec2_to_array(Vec2(1152-64, 64)).row][vec2_to_array(Vec2(1152-64, 64)).col] = BARRIER;
-      mapGrid[vec2_to_array(Vec2(1152+64, 64)).row][vec2_to_array(Vec2(1152+64, 64)).col] = BARRIER;
-      mapGrid[vec2_to_array(Vec2(832-64, 64)).row][vec2_to_array(Vec2(832-64, 64)).col] = BARRIER;
-      mapGrid[vec2_to_array(Vec2(832+64, 64)).row][vec2_to_array(Vec2(832+64, 64)).col] = BARRIER;
-
-      mapGrid[vec2_to_array(Vec2(768-64, 320)).row][vec2_to_array(Vec2(768-64, 320)).col] = BARRIER;
-      mapGrid[vec2_to_array(Vec2(768 + 64, 320)).row][vec2_to_array(Vec2(768 +64, 320)).col] = BARRIER;
-      mapGrid[vec2_to_array(Vec2(512-64, 576)).row][vec2_to_array(Vec2(512-64, 576)).col] = BARRIER;
-      mapGrid[vec2_to_array(Vec2(512+64, 576)).row][vec2_to_array(Vec2(512+64, 576)).col] = BARRIER;
-       //4
-      mapGrid[vec2_to_array(Vec2(128-64, 384-64)).row][vec2_to_array(Vec2(128-64, 384-64)).col] = BARRIER;
-      mapGrid[vec2_to_array(Vec2(128+64, 384-64)).row][vec2_to_array(Vec2(128+64, 384-64)).col] = BARRIER;
-      mapGrid[vec2_to_array(Vec2(128 - 64, 384+64)).row][vec2_to_array(Vec2(128 - 64, 384 +64)).col] = BARRIER;
-      mapGrid[vec2_to_array(Vec2(128 + 64, 384+64)).row][vec2_to_array(Vec2(128 + 64, 384 +64)).col] = BARRIER;
-      
-      mapGrid[vec2_to_array(Vec2(512-64, 256 - 64)).row][vec2_to_array(Vec2(512-64, 256 - 64)).col] = BARRIER;
-      mapGrid[vec2_to_array(Vec2(512+ 64, 256 - 64)).row][vec2_to_array(Vec2(512+64, 256 - 64)).col] = BARRIER;
-      mapGrid[vec2_to_array(Vec2(512 + 64, 256+64)).row][vec2_to_array(Vec2(512 + 64, 256+64)).col] = BARRIER;
-      mapGrid[vec2_to_array(Vec2(512 - 64, 256+64)).row][vec2_to_array(Vec2(512 - 64, 256+ 64)).col] = BARRIER;
-
-      mapGrid[vec2_to_array(Vec2(1152-64, 512-64)).row][vec2_to_array(Vec2(1152-64, 512-64)).col] = BARRIER;
-      mapGrid[vec2_to_array(Vec2(1152 - 64, 512 +64)).row][vec2_to_array(Vec2(1152 - 64, 512+64)).col] = BARRIER;
-      mapGrid[vec2_to_array(Vec2(1152+ 64, 512 - 64)).row][vec2_to_array(Vec2(1152+64, 512 - 64)).col] = BARRIER;
-      mapGrid[vec2_to_array(Vec2(1152 + 64, 512 + 64)).row][vec2_to_array(Vec2(1152+64, 512+64)).col] = BARRIER;
-
-      mapGrid[vec2_to_array(Vec2(768-64, 768-64)).row][vec2_to_array(Vec2(768-64, 768-64)).col] = BARRIER;
-      mapGrid[vec2_to_array(Vec2(768+64, 768 - 64)).row][vec2_to_array(Vec2(768 + 64, 768 - 64)).col] = BARRIER;
-      mapGrid[vec2_to_array(Vec2(768 - 64, 768 + 64)).row][vec2_to_array(Vec2(768 - 64, 768+64)).col] = BARRIER;
-      mapGrid[vec2_to_array(Vec2(768 + 64, 768 + 64)).row][vec2_to_array(Vec2(768 + 64, 768 + 64)).col] = BARRIER;
+        barrierManager->BarrierAppear(BARRIER_2_1, 512, 704, 2);
+        barrierManager->BarrierAppear(BARRIER_2_1, 1152, 64, 2);
+        barrierManager->BarrierAppear(BARRIER_2_1, 768, 320, 2);
+        barrierManager->BarrierAppear(BARRIER_2_2, 512, 576, 2);
+        barrierManager->BarrierAppear(BARRIER_4_1, 128, 384, 4);
+        barrierManager->BarrierAppear(BARRIER_4_1, 512, 256, 4);
+        barrierManager->BarrierAppear(BARRIER_4_1, 1152, 512, 4);
+        barrierManager->BarrierAppear(BARRIER_4_2, 768, 768, 4);
+        barrierManager->BarrierAppear(BARRIER_4_2, 256, 640, 4);
 
 
-      mapGrid[vec2_to_array(Vec2(256-64, 640-64)).row][vec2_to_array(Vec2(256-64, 640-64)).col] = BARRIER;
-      mapGrid[vec2_to_array(Vec2(256-64, 640+64)).row][vec2_to_array(Vec2(256-64, 640+64)).col] = BARRIER;
-      mapGrid[vec2_to_array(Vec2(256+64, 640-64)).row][vec2_to_array(Vec2(256+64, 640-64)).col] = BARRIER;
-      mapGrid[vec2_to_array(Vec2(256 + 64, 640+64)).row][vec2_to_array(Vec2(256 + 64, 640+64)).col] = BARRIER;
 
-      break;
+        this->addChild(barrierManager);
+        mapGrid[4][2] = PATH;
+        mapGrid[5][2] = PATH;
+        mapGrid[6][2] = PATH;
+        mapGrid[7][2] = PATH;
+        mapGrid[4][3] = PATH;
+        mapGrid[4][4] = PATH;
+        mapGrid[4][5] = PATH;
+        mapGrid[3][5] = PATH;
+        mapGrid[3][6] = PATH;
+        mapGrid[3][7] = PATH;
+        mapGrid[2][7] = PATH;
+        mapGrid[2][8] = PATH;
+        mapGrid[2][9] = PATH;
+        mapGrid[2][10] = PATH;
+        mapGrid[3][10] = PATH;
+        mapGrid[4][10] = PATH;
+        mapGrid[5][10] = PATH;
+        mapGrid[5][9] = PATH;
+        mapGrid[5][8] = PATH;
+        mapGrid[5][7] = PATH;
+        mapGrid[6][7] = PATH;
+        mapGrid[6][6] = PATH;
+        mapGrid[6][5] = PATH;
+        mapGrid[7][5] = PATH;
+        mapGrid[7][4] = PATH;
+        mapGrid[7][3] = PATH;
+
+
+        mapGrid[vec2_to_array(Vec2(64, 832)).row][vec2_to_array(Vec2(64, 832)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(192, 832)).row][vec2_to_array(Vec2(192, 832)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(320, 832)).row][vec2_to_array(Vec2(320, 832)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(448, 832)).row][vec2_to_array(Vec2(448, 832)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(576, 832)).row][vec2_to_array(Vec2(1472, 832)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(960, 832)).row][vec2_to_array(Vec2(960, 832)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(1088, 832)).row][vec2_to_array(Vec2(1088, 832)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(1472, 832)).row][vec2_to_array(Vec2(1472, 832)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(1280, 832)).row][vec2_to_array(Vec2(1280, 832)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(832, 448)).row][vec2_to_array(Vec2(832, 448)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(64, 704)).row][vec2_to_array(Vec2(64, 704)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(64, 576)).row][vec2_to_array(Vec2(64, 576)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(1472, 704)).row][vec2_to_array(Vec2(1472, 704)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(1472, 576)).row][vec2_to_array(Vec2(1472, 576)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(1472, 448)).row][vec2_to_array(Vec2(1472, 448)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(1472, 320)).row][vec2_to_array(Vec2(1472, 320)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(1472, 192)).row][vec2_to_array(Vec2(1472, 192)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(1344, 192)).row][vec2_to_array(Vec2(1344, 192)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(960, 64)).row][vec2_to_array(Vec2(960, 64)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(832, 64)).row][vec2_to_array(Vec2(832, 64)).col] = BARRIER;
+
+        //2
+        mapGrid[vec2_to_array(Vec2(512 - 64, 704)).row][vec2_to_array(Vec2(512 - 64, 704)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(512 + 64, 704)).row][vec2_to_array(Vec2(512 + 64, 704)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(1152 - 64, 64)).row][vec2_to_array(Vec2(1152 - 64, 64)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(1152 + 64, 64)).row][vec2_to_array(Vec2(1152 + 64, 64)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(832 - 64, 64)).row][vec2_to_array(Vec2(832 - 64, 64)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(832 + 64, 64)).row][vec2_to_array(Vec2(832 + 64, 64)).col] = BARRIER;
+
+        mapGrid[vec2_to_array(Vec2(768 - 64, 320)).row][vec2_to_array(Vec2(768 - 64, 320)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(768 + 64, 320)).row][vec2_to_array(Vec2(768 + 64, 320)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(512 - 64, 576)).row][vec2_to_array(Vec2(512 - 64, 576)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(512 + 64, 576)).row][vec2_to_array(Vec2(512 + 64, 576)).col] = BARRIER;
+        //4
+        mapGrid[vec2_to_array(Vec2(128 - 64, 384 - 64)).row][vec2_to_array(Vec2(128 - 64, 384 - 64)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(128 + 64, 384 - 64)).row][vec2_to_array(Vec2(128 + 64, 384 - 64)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(128 - 64, 384 + 64)).row][vec2_to_array(Vec2(128 - 64, 384 + 64)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(128 + 64, 384 + 64)).row][vec2_to_array(Vec2(128 + 64, 384 + 64)).col] = BARRIER;
+
+        mapGrid[vec2_to_array(Vec2(512 - 64, 256 - 64)).row][vec2_to_array(Vec2(512 - 64, 256 - 64)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(512 + 64, 256 - 64)).row][vec2_to_array(Vec2(512 + 64, 256 - 64)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(512 + 64, 256 + 64)).row][vec2_to_array(Vec2(512 + 64, 256 + 64)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(512 - 64, 256 + 64)).row][vec2_to_array(Vec2(512 - 64, 256 + 64)).col] = BARRIER;
+
+        mapGrid[vec2_to_array(Vec2(1152 - 64, 512 - 64)).row][vec2_to_array(Vec2(1152 - 64, 512 - 64)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(1152 - 64, 512 + 64)).row][vec2_to_array(Vec2(1152 - 64, 512 + 64)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(1152 + 64, 512 - 64)).row][vec2_to_array(Vec2(1152 + 64, 512 - 64)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(1152 + 64, 512 + 64)).row][vec2_to_array(Vec2(1152 + 64, 512 + 64)).col] = BARRIER;
+
+        mapGrid[vec2_to_array(Vec2(768 - 64, 768 - 64)).row][vec2_to_array(Vec2(768 - 64, 768 - 64)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(768 + 64, 768 - 64)).row][vec2_to_array(Vec2(768 + 64, 768 - 64)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(768 - 64, 768 + 64)).row][vec2_to_array(Vec2(768 - 64, 768 + 64)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(768 + 64, 768 + 64)).row][vec2_to_array(Vec2(768 + 64, 768 + 64)).col] = BARRIER;
+
+
+        mapGrid[vec2_to_array(Vec2(256 - 64, 640 - 64)).row][vec2_to_array(Vec2(256 - 64, 640 - 64)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(256 - 64, 640 + 64)).row][vec2_to_array(Vec2(256 - 64, 640 + 64)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(256 + 64, 640 - 64)).row][vec2_to_array(Vec2(256 + 64, 640 - 64)).col] = BARRIER;
+        mapGrid[vec2_to_array(Vec2(256 + 64, 640 + 64)).row][vec2_to_array(Vec2(256 + 64, 640 + 64)).col] = BARRIER;
+
+        break;
 
     }
 }
-
 
