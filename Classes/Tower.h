@@ -37,7 +37,6 @@ protected:
     cocos2d::Sprite* nearestEnemy; // 最近的敌人
     cocos2d::Vec2 fireTarget; // 目标坐标
     std::string ImageBase; // 图片路径
-    cocos2d::Sprite* weapon; // 武器
     Monster* currentTarget = nullptr;  // 当前目标敌人
     bool isLockedTarget = false;  // 是否锁定目标，防止频繁切换目标
 
@@ -125,7 +124,6 @@ class SunflowerTower : public Tower {
 private:
     bool isAttacking = false;  // 是否正在攻击
     float scaleFactor = 1.0f;  // 子弹的缩放因子
-    cocos2d::Sprite* currentTarget = nullptr;  // 当前目标敌人
     bool isLockedTarget = false;  // 是否锁定目标，防止频繁切换目标
 
 public:
