@@ -55,7 +55,7 @@ struct barrierSun {
 class BarrierInfo : public Node {
 public:
     CREATE_FUNC(BarrierInfo);
-   
+
     Sprite* barrierSprite = nullptr;  // 障碍物
     Sprite* hpHolder = nullptr;      // 血条背景
     Sprite* hpSlider = nullptr;      // 血条滑块
@@ -63,14 +63,14 @@ public:
     int hp = 0;                      // 当前血量
     int maxHp = 0;                   // 最大血量
     int Type = 1;
-    int gridX = -1;  
-    int gridY = -1; 
+    int gridX = -1;
+    int gridY = -1;
 
     Bullet* closestBullet = nullptr; // 最近的子弹
     std::vector<barrierSun>fires;
 
     // 初始化障碍物
-    bool initWithParams(const std::string& spritePath, const Vec2& position, int initialHp,int type) {
+    bool initWithParams(const std::string& spritePath, const Vec2& position, int initialHp, int type) {
         // 创建障碍物
         barrierSprite = Sprite::create(spritePath);
         if (!barrierSprite) return false;
@@ -81,9 +81,9 @@ public:
         maxHp = initialHp * 100;
         hp = initialHp * 100;
         Type = type;
-        gridX=position.x;
-        gridY = position.y ;
-     
+        gridX = position.x;
+        gridY = position.y;
+
         // 创建血条背景
         hpHolder = Sprite::create("/Barrier/HpHolder.png");
         hpHolder->setPosition(Vec2(position.x, position.y + barrierSprite->getContentSize().height / 2.25));
@@ -94,7 +94,7 @@ public:
         hpSlider = Sprite::create("/Barrier/HpSlider.png");
         hpSlider->setAnchorPoint(Vec2(0, 0.5));
         hpSlider->setPosition(Vec2(hpHolder->getPositionX() - hpHolder->getContentSize().width / 2,
-        hpHolder->getPositionY()));
+            hpHolder->getPositionY()));
         hpSlider->setVisible(false);
         this->addChild(hpSlider);
 
@@ -145,24 +145,23 @@ public:
     // 移除障碍物及血条
     void removeFromScene() {
         if (barrierSprite) {
-            // 更新 mapGrid 状态
-            if (Type == 0|| Type == 1) {
+            if (Type == 0 || Type == 1) {
                 mapGrid[vec2_to_array_BA(Vec2(gridX, gridY)).row][vec2_to_array_BA(Vec2(gridX, gridY)).col] = SPACE;
             }
-            else if (Type == 2|| Type == 3) {
+            else if (Type == 2 || Type == 3) {
                 mapGrid[vec2_to_array_BA(Vec2(gridX - 64, gridY)).row][vec2_to_array_BA(Vec2(gridX - 64, gridY)).col] = SPACE;
                 mapGrid[vec2_to_array_BA(Vec2(gridX + 64, gridY)).row][vec2_to_array_BA(Vec2(gridX + 64, gridY)).col] = SPACE;
             }
-            else if (Type == 4||Type == 5) {
+            else if (Type == 4 || Type == 5) {
                 mapGrid[vec2_to_array_BA(Vec2(gridX - 64, gridY - 64)).row][vec2_to_array_BA(Vec2(gridX - 64, gridY - 64)).col] = SPACE;
                 mapGrid[vec2_to_array_BA(Vec2(gridX + 64, gridY - 64)).row][vec2_to_array_BA(Vec2(gridX + 64, gridY - 64)).col] = SPACE;
                 mapGrid[vec2_to_array_BA(Vec2(gridX - 64, gridY + 64)).row][vec2_to_array_BA(Vec2(gridX - 64, gridY + 64)).col] = SPACE;
                 mapGrid[vec2_to_array_BA(Vec2(gridX + 64, gridY + 64)).row][vec2_to_array_BA(Vec2(gridX + 64, gridY + 64)).col] = SPACE;
             }
-
             if (Type == 0 || Type == 1) {
                 coinNumber += 50;
             }
+           
             else if (Type == 2 || Type == 3) {
                 coinNumber += 100;
             }
@@ -210,6 +209,7 @@ public:
                 closestBullet = bullet;
                 break; // 找到第一个满足条件的子弹后立即退出
             }
+            else hideHpBar();
         }
     }
 
@@ -225,7 +225,7 @@ public:
                     target = &fire;
             }
 
-            if (barrierSprite&&sunflower->getBoundingBox().containsPoint(barrierSprite->getPosition())) {
+            if (barrierSprite && sunflower->getBoundingBox().containsPoint(barrierSprite->getPosition())) {
                 if (target == nullptr) {
                     barrierSun new_fire(sunflower, true);
                     fires.push_back(new_fire);
@@ -243,6 +243,7 @@ public:
                 }
             }
             else {
+                hideHpBar();
                 if (target != NULL)
                     target->attacked = false;
             }
@@ -251,7 +252,6 @@ public:
         if (isDead()) {
             removeFromScene();
         }
-        
 
         // 更新障碍物逻辑
         findNearestBullet();  // 查找最近的子弹
@@ -273,7 +273,6 @@ public:
                 closestBullet = NULL;
             }
         }
-        
     }
 };
 
@@ -284,13 +283,13 @@ public:
 
     Vector<BarrierInfo*> barriers;      // 存储所有障碍物
     BarrierInfo* selectedBarrier;  // 当前选中的障碍物
-    
+
 
     // 初始化障碍物
     void BarrierAppear(int type, float positionX, float positionY, int initialHp) {
         // 障碍物的图片路径
         std::string picture[] = {
-    
+
             "Barrier/one1.png", "Barrier/one2.png",
             "Barrier/two1.png", "Barrier/two2.png",
             "Barrier/four1.png", "Barrier/four2.png"
@@ -298,42 +297,13 @@ public:
 
         // 创建 BarrierInfo 实例
         auto barrierInfo = BarrierInfo::create();
-        if (barrierInfo && barrierInfo->initWithParams(picture[type], Vec2(positionX, positionY), initialHp,type)) {
+        if (barrierInfo && barrierInfo->initWithParams(picture[type], Vec2(positionX, positionY), initialHp, type)) {
             this->addChild(barrierInfo);
             barriers.pushBack(barrierInfo);
         }
 
     }
 
-    // 鼠标点击事件监听器
-   void createMouseEventListener() {
-        auto listener = EventListenerMouse::create();
-        listener->onMouseDown = [this](Event* event) {
-            auto mouseEvent = dynamic_cast<EventMouse*>(event);
-            Vec2 clickPosition = mouseEvent->getLocationInView();
-            clickPosition = this->convertToNodeSpace(clickPosition);
-            // 判断是否点击障碍物
-            BarrierInfo* clickedBarrier = getClickedBarrier(clickPosition);
-            if (clickedBarrier) {
-                // 如果点击了障碍物，显示其血条并使其成为选中障碍物
-                deselectBarrier();  // 取消之前的选中状态
-                selectedBarrier = clickedBarrier;
-                selectedBarrier->showHpBar();
-                selectedBarrier->takeDamage(1);  // 示例：点击后减少 1 点血量
-                // 如果障碍物血量为 0，移除障碍物
-                if (selectedBarrier->isDead()) {
-                    removeBarrier(selectedBarrier);
-                    selectedBarrier = nullptr;
-                }
-            }
-            else {
-                // 点击空白区域隐藏血条
-                deselectBarrier();
-            }
-            };
-
-        _eventDispatcher->addEventListenerWithSceneGraphPriority(listener, this);
-    }
     
     // 根据点击位置获取障碍物
     BarrierInfo* getClickedBarrier(const Vec2& position) {
