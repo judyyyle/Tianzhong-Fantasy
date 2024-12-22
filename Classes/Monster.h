@@ -52,7 +52,7 @@ struct MapPath {
     int direction;  // 移动方向，UP/DOWN/LEFT/RIGHT/STOP
 };
 
-/太阳花的攻击结构体
+//太阳花的攻击结构体
 struct SunFire {
     Sunflowerfire* sun_fire; //太阳花攻击的类指针
     bool attacked; //是否已攻击
