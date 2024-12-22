@@ -5,11 +5,12 @@
 #include "cocos2d.h"
 #include<vector>
 using std::vector;
-
+extern int isPause;
+extern int level;
 enum GameState {
-	ONGOING,  // ÓÎÏ·½øĞĞÖĞ
-	WIN,      // ÓÎÏ·Ê¤Àû
-	LOSE      // ÓÎÏ·Ê§°Ü
+	ONGOING,  // æ¸¸æˆè¿›è¡Œä¸­
+	WIN,      // æ¸¸æˆèƒœåˆ©
+	LOSE      // æ¸¸æˆå¤±è´¥
 };
 
 
@@ -18,51 +19,50 @@ class GameManager
 public:
 	static  GameManager* getInstance();
 
-	void saveGameState();              // ±£´æÓÎÏ·×´Ì¬
-	void loadGameState();              // ¼ÓÔØÓÎÏ·×´Ì¬
-
-	// Ìí¼Ó¹ÖÎïµ½ÁĞ±í
+	// æ·»åŠ æ€ªç‰©åˆ°åˆ—è¡¨
 	void addMonster(Monster* monster);
 
-	// ÒÆ³ı¹ÖÎï
+	// ç§»é™¤æ€ªç‰©
 	void removeMonster(Monster* monster);
 
-	// »ñÈ¡µ±Ç°³¡¾°ÖĞËùÓĞ´æ»î¹ÖÎï 
+	// è·å–å½“å‰åœºæ™¯ä¸­æ‰€æœ‰å­˜æ´»æ€ªç‰© 
 	const vector<Monster*>& getActiveMonsters()const;
 
 
-	// ÓÎÏ·×´Ì¬Ïà¹Ø
-	void setGameState(GameState state);  // ÉèÖÃÓÎÏ·×´Ì¬
-	GameState getGameState() const;      // »ñÈ¡µ±Ç°ÓÎÏ·×´Ì¬
-
+	// æ¸¸æˆçŠ¶æ€ç›¸å…³
+	void setGameState(GameState state);  // è®¾ç½®æ¸¸æˆçŠ¶æ€
+	GameState getGameState() const;      // è·å–å½“å‰æ¸¸æˆçŠ¶æ€
+	void showResultPopup();
 	void endGame();
+
 	void GameManager::checkForGameOver() {
 		if (carrotHP <= 0) {
-			setGameState(LOSE);  // ÉèÖÃÎªÊ§°Ü×´Ì¬
+			setGameState(LOSE);  // è®¾ç½®ä¸ºå¤±è´¥çŠ¶æ€
 		}
 	}
 
 	void GameManager::checkForVictory() {
-		if (activeMonsters.empty() && currentWaves >= allWaves) {
-			setGameState(WIN);  // ÉèÖÃÎªÊ¤Àû×´Ì¬
+		if (activeMonsters.empty() && currentWave >= allWaves) {
+			setGameState(WIN);  // è®¾ç½®ä¸ºèƒœåˆ©çŠ¶æ€
 		}
 	}
+	
 
-	// ÓÎÏ·×´Ì¬±äÁ¿
-	int allWaves;        // ×Ü²¨Êı
-	int currentWaves;    // µ±Ç°²¨Êı
-	int carrotHP;        // ÂÜ²·ÑªÁ¿
-	int coinNumber;      // ½ğ±ÒÊıÁ¿
-	int level;           // µ±Ç°¹Ø¿¨±àºÅ
-	int towerCount;      // ·ÀÓùËşÊıÁ¿
+	// æ¸¸æˆçŠ¶æ€å˜é‡
+	int allWaves;        // æ€»æ³¢æ•°
+	int currentWave;    // å½“å‰æ³¢æ•°
+	int carrotHP;        // èåœè¡€é‡
+	int coinNumber;      // é‡‘å¸æ•°é‡
+	int level;           // å½“å‰å…³å¡ç¼–å·
+	int towerCount;      // é˜²å¾¡å¡”æ•°é‡
 
 private:
 	GameManager();
-	// ´æ´¢µ±Ç°ËùÓĞ¹ÖÎï
+	// å­˜å‚¨å½“å‰æ‰€æœ‰æ€ªç‰©
 	std::vector<Monster*> activeMonsters;
-	GameState currentState; // ÓÎÏ·µ±Ç°×´Ì¬
-	// Ë½ÓĞ¹¹Ôìº¯Êı£¨µ¥ÀıÄ£Ê½£©
-	static GameManager* instance;      // ¾²Ì¬µ¥ÀıÊµÀı
+	GameState currentState; // æ¸¸æˆå½“å‰çŠ¶æ€
+	// ç§æœ‰æ„é€ å‡½æ•°ï¼ˆå•ä¾‹æ¨¡å¼ï¼‰
+	static GameManager* instance;      // é™æ€å•ä¾‹å®ä¾‹
 
 
 };
