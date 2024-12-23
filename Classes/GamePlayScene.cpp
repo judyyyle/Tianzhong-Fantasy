@@ -2,7 +2,6 @@
 #include"HelloWorldScene.h"
 #include "SimpleAudioEngine.h"
 #include "LevelSelectionScene.h"
-#include "GameManager.h"
 #include<vector>
 #include "ui/CocosGUI.h"
 #include <memory>  // 引入智能指针s
