@@ -1204,7 +1204,7 @@ void MAP_SCENE::setBackground(const std::string& backgroundImage) {
 
 
 void MAP_SCENE::onExitGame() {
-    GameManager::getInstance()->endGame(); // 调用 endGame 中止游戏并保存状态
+  //  GameManager::getInstance()->endGame(); // 调用 endGame 中止游戏并保存状态
     Director::getInstance()->end();  // 结束游戏
 }
 
