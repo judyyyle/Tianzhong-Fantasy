@@ -404,7 +404,7 @@ void GameMenu::showLosePopup() {//失败结算画面
     black_layer->addChild(waves_txt, 2);
 
     // 关卡显示
-    auto level_txt = Label::createWithTTF("0" + std::to_string(level), "/fonts/Marker Felt.ttf", 32);
+    auto level_txt = Label::createWithTTF("0" + std::to_string(level+1), "/fonts/Marker Felt.ttf", 32);
     level_txt->setPosition(Vec2(origin.x + visibleSize.width * 0.4 + 50, origin.y + visibleSize.height * 0.43 + 20));
     black_layer->addChild(level_txt, 2);
 
