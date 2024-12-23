@@ -4,7 +4,6 @@
 #include "LevelSelectionScene.h"
 #include<vector>
 #include "ui/CocosGUI.h"
-#include <memory>  // 引入智能指针s
 #include "cocos2d.h"
 #include "Tower.h"
 #include "BarrierAppear.h"
