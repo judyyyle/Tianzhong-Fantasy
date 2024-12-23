@@ -218,7 +218,7 @@ void Monster::update(float dt) {
     switch (path[path_count].direction) {
     case UP:
         //如果怪物还没有到达下一个路径点（在 Y 方向上向上移动），则更新位置
-        if (now_y < path[path_count + 1].point.y)
+        if (now_y < path[(path_count + 1) % path_total].point.y)
             this->setPosition(now_x, now_y);
         else  //如果怪物到达或超过了目标点，切换到下一个路径点
             path_count++;
@@ -226,7 +226,7 @@ void Monster::update(float dt) {
 
     case DOWN:
         //如果怪物还没有到达下一个路径点（在 Y 方向上向下移动），则更新位置
-        if (now_y > path[path_count + 1].point.y)
+        if (now_y > path[(path_count + 1) % path_total].point.y)
             this->setPosition(now_x, now_y);
         else  //如果怪物到达或超过了目标点，切换到下一个路径点
             path_count++;
@@ -234,7 +234,7 @@ void Monster::update(float dt) {
 
     case LEFT:
         //如果怪物还没有到达下一个路径点（在 X 方向上向左移动），则更新位置
-        if (now_x > path[path_count + 1].point.x)
+        if (now_x > path[(path_count + 1) % path_total].point.x)
             this->setPosition(now_x, now_y);
         else  //如果怪物到达或超过了目标点，切换到下一个路径点
             path_count++;
@@ -242,7 +242,7 @@ void Monster::update(float dt) {
 
     case RIGHT:
         //如果怪物还没有到达下一个路径点（在 X 方向上向右移动），则更新位置
-        if (now_x < path[path_count + 1].point.x)
+        if (now_x < path[(path_count + 1) % path_total].point.x)
             this->setPosition(now_x, now_y);
         else  //如果怪物到达或超过了目标点，切换到下一个路径点
             path_count++;
