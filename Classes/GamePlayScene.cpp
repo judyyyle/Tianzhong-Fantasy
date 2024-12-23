@@ -2,7 +2,8 @@
 #include"HelloWorldScene.h"
 #include "SimpleAudioEngine.h"
 #include "LevelSelectionScene.h"
-#include<vector>
+#include <vector>
+#include <memory> 
 #include "ui/CocosGUI.h"
 #include "cocos2d.h"
 #include "Tower.h"
