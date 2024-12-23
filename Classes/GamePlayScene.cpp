@@ -1134,7 +1134,7 @@ void  MAP_SCENE::initLevel(int level)// 初始化关卡的方法
             Vec2 touchLocation = touch->getLocation();
             array arr = vec2_to_array(touchLocation);
             // 检查是否点击到了怪物
-            Monster* clickedMonster = checkMonsterClicked(touchLocation);
+            clickedMonster = checkMonsterClicked(touchLocation);
             // 如果点击到怪物，则不执行后续操作
             if (clickedMonster != nullptr) {
 
