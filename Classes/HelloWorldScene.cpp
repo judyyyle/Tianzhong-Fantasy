@@ -1,7 +1,6 @@
 #include "HelloWorldScene.h"
 #include "SimpleAudioEngine.h"
 #include "LevelSelectionScene.h" 
-#include "GameManager.h"
 #include "ui/CocosGUI.h"
 #include "cocos2d.h"
 USING_NS_CC;
@@ -82,7 +81,7 @@ bool HelloWorld::init()
         this->addChild(sprite, 0);//背景层级为0，确保它在最底层
     }
 
-    GameManager::getInstance(); // 确保 GameManager 的单例被创建
+   // GameManager::getInstance(); // 确保 GameManager 的单例被创建
   
     auto AdeventureModebutton = ui::Button::create("MainMenuScene/AdeventureMode.png", "MainMenuScene/AdventureModeAfterpress.png");
     AdeventureModebutton->setPosition(Vec2(384, visibleSize.height / 2 + origin.y - 300));
