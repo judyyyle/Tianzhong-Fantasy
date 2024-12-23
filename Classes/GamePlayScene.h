@@ -33,8 +33,6 @@ class MAP_SCENE : public cocos2d::Scene
 {
 public:
     // 构造函数
-
-  
     MAP_SCENE::MAP_SCENE();
     // 析构函数
     virtual ~MAP_SCENE();
@@ -42,24 +40,42 @@ public:
     static MAP_SCENE* create();
     // 初始化方法，子类可以重写
     bool init() override;
-    // 游戏中各个功能的成员函数
-    Monster* checkMonsterClicked(Vec2 touchLocation);
+    // 初始化关卡的方法
+    void initLevel(int level);  
+    //初始化地图数组
     void initializeMapArray(int level);
-    void onTouchBegan(cocos2d::Touch* touch, cocos2d::Event* event);
-    void showBuildFeedback(int row, int col);
-    void clearWarningSprites();  // 清除提示图标
-    void addTowerPreview(int row, int col);
-    void deleteTower(int row, int col);
-    void upgradeTower(int row, int col);
-    Tower* getTowerAt(int row, int col);
-    void onTowerPreviewClicked(int towerIndex, int row, int col);
-    void updateordeleteTowerPreview(int row, int col);
-    void handleTowerClick(int row, int col);
-    void initLevel(int level);  // 初始化关卡的方法
+    // 初始化资源
     void initResources();
+    //地图背景
     void setBackground(const std::string& backgroundImage);
-    void onExitGame();
+    // 游戏中各个功能的成员函数
+
+    //鼠标触摸事件管理
+    void onTouchBegan(cocos2d::Touch* touch, cocos2d::Event* event);
+    // 检查是否点击到了怪物
+    Monster* checkMonsterClicked(Vec2 touchLocation);
+    void handleTowerClick(int row, int col);
+   
+     // 创建鼠标事件监听器
     void createMouseEventListener();
+    // 清除提示图标
+    void clearWarningSprites(); 
+    // 添加防御塔预览
+    void addTowerPreview(int row, int col);
+    // 删除指定位置的防御塔
+    void deleteTower(int row, int col);
+    //升级指定位置的防御塔
+    void upgradeTower(int row, int col);
+    // 获取指定位置的防御塔
+    Tower* getTowerAt(int row, int col);
+     // 处理点击防御塔预览
+    void onTowerPreviewClicked(int towerIndex, int row, int col);
+    // 更新或删除防御塔预览
+    void updateordeleteTowerPreview(int row, int col);
+    void showBuildFeedback(int row, int col);
+    void onExitGame();
+  
+    // 更新游戏状态，每帧调用
     void update(float deltaTime);
   
 protected:
