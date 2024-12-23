@@ -207,7 +207,7 @@ public:
             // 如果倒计时大于 0，则继续倒计时
             if (boss_time > 0)
             {
-                if (boss_time != 90 && monsters.empty()) {
+                if (current == 17 && monsters.empty()) {
                     currentWave = allWaves + 1;  // 游戏胜利
                     this->unschedule("update_key");  // 停止定时器
                 }
